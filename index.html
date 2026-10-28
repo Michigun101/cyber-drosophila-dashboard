@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber-Drosophila · Коннектом мухи</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<style>
+  body {
+    background: radial-gradient(ellipse at top, #0f1a2e 0%, #05070d 70%);
+    color: #cbd5e1;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    min-height: 100vh;
+  }
+  .panel {
+    background: rgba(10, 16, 30, 0.75);
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    box-shadow: 0 0 24px rgba(34, 211, 238, 0.08), inset 0 0 24px rgba(34, 211, 238, 0.04);
+    backdrop-filter: blur(6px);
+    border-radius: 14px;
+  }
+  .neon-title {
+    text-shadow: 0 0 8px #22d3ee, 0 0 22px rgba(34, 211, 238, 0.6);
+  }
+  .scanline::after {
+    content: "";
+    position: absolute; inset: 0; pointer-events: none; border-radius: 14px;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px);
+  }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 4px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #0b1222; border: 2px solid currentColor; box-shadow: 0 0 10px currentColor; cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: #0b1222; border: 2px solid currentColor; box-shadow: 0 0 10px currentColor;
+  }
+  .glow-halo { transition: opacity .4s ease; }
+  .pulse-inner { animation: pulse var(--dur, 2s) ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: .35; }
+    50% { opacity: 1; }
+  }
+  .verdict-up { text-shadow: 0 0 12px #4ade80; }
+  .verdict-down { text-shadow: 0 0 12px #f87171; }
+  .btn-run {
+    background: linear-gradient(90deg, #06b6d4, #d946ef);
+    box-shadow: 0 0 18px rgba(217, 70, 239, 0.45);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .btn-run:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(34, 211, 238, 0.6); filter: brightness(1.1); }
+  .btn-run:active { transform: translateY(0) scale(.98); }
+  .btn-run:disabled { opacity: .6; cursor: wait; }
+  .tab-active { background: rgba(34, 211, 238, .15); color: #67e8f9; box-shadow: 0 0 12px rgba(34, 211, 238, .35); }
+</style>
+</head>
+<body class="p-4 md:p-6">
+
+<header class="mb-6 text-center">
+  <p class="text-xs tracking-[0.4em] text-cyan-400/70">BIO-LAB // CONNECTOME ENGINE v0.1</p>
+  <h1 class="neon-title text-3xl md:text-4xl font-bold text-cyan-300 mt-2">CYBER-DROSOPHILA</h1>
+  <p class="text-sm text-slate-400 mt-1">Прогнозирование временных рядов коннектомом мухи</p>
+</header>
+
+<div class="flex justify-center mb-6">
+  <div class="inline-flex rounded-full border border-cyan-500/30 p-1 bg-slate-900/70">
+    <button id="tab-weather" class="tab-active px-5 py-2 rounded-full text-sm transition">Погода</button>
+    <button id="tab-finance" class="px-5 py-2 rounded-full text-sm text-slate-400 transition">Финансовый рынок</button>
+  </div>
+</div>
+
+<main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+  <!-- Левая панель: пульт -->
+  <section class="panel scanline relative p-5 xl:col-span-3 space-y-6">
+    <h2 class="text-sm tracking-widest text-cyan-300">ПУЛЬТ СТИМУЛЯЦИИ РЕЦЕПТОРОВ</h2>
+
+    <div id="sliders" class="space-y-5">
+      <div>
+        <div class="flex justify-between text-xs mb-2">
+          <span id="label-vision" class="text-cyan-300">Зрение (График цены/температуры)</span>
+          <span id="val-vision" class="text-cyan-200 tabular-nums">0 Гц</span>
+        </div>
+        <input id="vision" type="range" min="0" max="200" value="100" class="w-full" style="color:#22d3ee; background: linear-gradient(90deg,#164e63,#22d3ee);">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-2">
+          <span id="label-odor" class="text-fuchsia-300">Усики Or56a (Запах новостей / Давление)</span>
+          <span id="val-odor" class="text-fuchsia-200 tabular-nums">0 Гц</span>
+        </div>
+        <input id="odor" type="range" min="0" max="200" value="100" class="w-full" style="color:#e879f9; background: linear-gradient(90deg,#701a75,#e879f9);">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-2">
+          <span id="label-humidity" class="text-lime-300">Гигрорецепторы (Влажность / Объем торгов)</span>
+          <span id="val-humidity" class="text-lime-200 tabular-nums">0 Гц</span>
+        </div>
+        <input id="humidity" type="range" min="0" max="200" value="100" class="w-full" style="color:#a3e635; background: linear-gradient(90deg,#365314,#a3e635);">
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-amber-400/30 p-3 bg-amber-400/5">
+      <p class="text-xs text-amber-300/80">Активность MN9 (хоботок), прогноз</p>
+      <p class="text-2xl font-bold text-amber-300 tabular-nums" id="mn9-live">0 Гц</p>
+    </div>
+
+    <button id="run" class="btn-run w-full py-4 rounded-xl text-white font-bold tracking-wide">
+      ▶ Запустить симуляцию мозга
+    </button>
+  </section>
+
+  <!-- Центр: муха -->
+  <section class="panel relative p-5 xl:col-span-5 flex flex-col">
+    <h2 class="text-sm tracking-widest text-cyan-300 mb-2">КОННЕКТОМ // СХЕМА МУХИ</h2>
+    <svg id="fly" viewBox="0 0 600 480" class="w-full h-auto max-h-[560px]">
+      <defs>
+        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <filter id="blurSm" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5"/>
+        </filter>
+        <radialGradient id="eyeGrad" cx="35%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#e0f7ff"/>
+          <stop offset="40%" stop-color="#22d3ee"/>
+          <stop offset="100%" stop-color="#0e7490"/>
+        </radialGradient>
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#1e293b"/>
+          <stop offset="50%" stop-color="#334155"/>
+          <stop offset="100%" stop-color="#1e293b"/>
+        </linearGradient>
+        <path id="pathAntL" d="M285 92 Q262 60 246 36"/>
+        <path id="pathAntR" d="M315 92 Q338 60 354 36"/>
+        <path id="pathBrain" d="M300 116 L300 150"/>
+        <path id="pathProb" d="M300 160 L300 190"/>
+      </defs>
+
+      <!-- Крылья -->
+      <ellipse cx="222" cy="250" rx="58" ry="100" transform="rotate(-14 222 250)" fill="rgba(125,211,252,0.08)" stroke="rgba(125,211,252,0.35)"/>
+      <ellipse cx="378" cy="250" rx="58" ry="100" transform="rotate(14 378 250)" fill="rgba(125,211,252,0.08)" stroke="rgba(125,211,252,0.35)"/>
+
+      <!-- Лапки -->
+      <g id="legs" stroke="#64748b" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M262 200 L170 160 L140 120"/>
+        <path d="M258 240 L140 230 L110 270"/>
+        <path d="M262 280 L170 340 L150 390"/>
+        <path d="M338 200 L430 160 L460 120"/>
+        <path d="M342 240 L460 230 L490 270"/>
+        <path d="M338 280 L430 340 L450 390"/>
+      </g>
+      <g id="legsGlow" stroke="#a3e635" stroke-width="10" fill="none" stroke-linecap="round" opacity="0" filter="url(#blur)">
+        <path d="M262 200 L170 160 L140 120"/>
+        <path d="M258 240 L140 230 L110 270"/>
+        <path d="M262 280 L170 340 L150 390"/>
+        <path d="M338 200 L430 160 L460 120"/>
+        <path d="M342 240 L460 230 L490 270"/>
+        <path d="M338 280 L430 340 L450 390"/>
+      </g>
+
+      <!-- Брюшко и грудь -->
+      <ellipse cx="300" cy="365" rx="42" ry="82" fill="url(#bodyGrad)" stroke="#475569"/>
+      <ellipse cx="300" cy="235" rx="55" ry="62" fill="url(#bodyGrad)" stroke="#475569"/>
+
+      <!-- Голова -->
+      <circle cx="300" cy="120" r="42" fill="#1e293b" stroke="#475569"/>
+
+      <!-- Глаза -->
+      <g id="eyes">
+        <ellipse cx="256" cy="115" rx="24" ry="30" fill="url(#eyeGrad)" opacity="0.35" id="eyeL"/>
+        <ellipse cx="344" cy="115" rx="24" ry="30" fill="url(#eyeGrad)" opacity="0.35" id="eyeR"/>
+      </g>
+      <ellipse id="eyesHalo" cx="300" cy="115" rx="110" ry="40" fill="#22d3ee" opacity="0" filter="url(#blur)"/>
+
+      <!-- Усики -->
+      <g id="antennae" fill="none" stroke="#e879f9" stroke-linecap="round">
+        <use href="#pathAntL" stroke-width="3"/>
+        <use href="#pathAntR" stroke-width="3"/>
+      </g>
+      <g id="antennaeGlow" fill="none" stroke="#e879f9" stroke-width="12" stroke-linecap="round" opacity="0" filter="url(#blur)">
+        <g class="pulse-inner">
+          <use href="#pathAntL"/>
+          <use href="#pathAntR"/>
+        </g>
+      </g>
+      <circle cx="246" cy="36" r="4" fill="#f5d0fe"/>
+      <circle cx="354" cy="36" r="4" fill="#f5d0fe"/>
+
+      <!-- Грибовидное тело -->
+      <g id="brain">
+        <circle cx="300" cy="112" r="20" fill="#a3e635" opacity="0"/>
+        <ellipse cx="300" cy="104" rx="13" ry="8" fill="#365314" stroke="#a3e635" stroke-width="1.5"/>
+        <rect x="297" y="104" width="6" height="16" fill="#365314" stroke="#a3e635" stroke-width="1.2"/>
+      </g>
+      <circle id="brainHalo" cx="300" cy="112" r="28" fill="#a3e635" opacity="0" filter="url(#blur)"/>
+
+      <!-- Хоботок MN9 -->
+      <line x1="300" y1="160" x2="300" y2="190" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+      <circle id="mn9" cx="300" cy="192" r="8" fill="#fbbf24" opacity="0.5"/>
+      <circle id="mn9Halo" cx="300" cy="192" r="18" fill="#fbbf24" opacity="0" filter="url(#blur)"/>
+
+      <!-- Подписи -->
+      <g font-size="12" fill="#94a3b8" font-family="ui-monospace, monospace">
+        <line x1="330" y1="36" x2="420" y2="36" stroke="#e879f9" stroke-opacity=".4" stroke-dasharray="3 3"/>
+        <text x="425" y="40" fill="#f0abfc">Усики (Or56a)</text>
+        <line x1="352" y1="112" x2="470" y2="90" stroke="#22d3ee" stroke-opacity=".4" stroke-dasharray="3 3"/>
+        <text x="475" y="94" fill="#67e8f9">Глаза</text>
+        <line x1="322" y1="110" x2="450" y2="150" stroke="#a3e635" stroke-opacity=".4" stroke-dasharray="3 3"/>
+        <text x="455" y="154" fill="#bef264">Грибовидное тело</text>
+        <line x1="308" y1="192" x2="440" y2="200" stroke="#fbbf24" stroke-opacity=".4" stroke-dasharray="3 3"/>
+        <text x="445" y="204" fill="#fcd34d">MN9 (хоботок)</text>
+        <text x="20" y="470" fill="#64748b">Лапки: моторный выход</text>
+      </g>
+
+      <g id="impulses"></g>
+    </svg>
+
+    <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="rounded-lg bg-cyan-400/5 border border-cyan-400/20 p-2"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums">0</div></div>
+      <div class="rounded-lg bg-fuchsia-400/5 border border-fuchsia-400/20 p-2"><span class="text-fuchsia-300">Усики</span><div id="stat-odor" class="tabular-nums">0</div></div>
+      <div class="rounded-lg bg-lime-400/5 border border-lime-400/20 p-2"><span class="text-lime-300">Мозг</span><div id="stat-humidity" class="tabular-nums">0</div></div>
+    </div>
+  </section>
+
+  <!-- Правая часть: график и вердикт -->
+  <section class="xl:col-span-4 space-y-6">
+    <div class="panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm tracking-widest text-cyan-300">ГРАФИК ПРОГНОЗА</h2>
+        <span id="chart-mode" class="text-xs text-slate-500">Погода, °C</span>
+      </div>
+      <div class="relative h-64">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel p-5">
+      <h2 class="text-sm tracking-widest text-cyan-300 mb-3">ВЕРДИКТ МУХИ</h2>
+      <p id="verdict" class="text-base leading-relaxed text-slate-200">
+        Нажми «Запустить симуляцию мозга», чтобы получить прогноз.
+      </p>
+    </div>
+
+    <div class="panel p-5">
+      <h2 class="text-sm tracking-widest text-cyan-300 mb-3">МЕТРИКИ</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-lg border border-slate-700 p-3">
+          <p class="text-xs text-slate-500">Точность прогноза</p>
+          <p id="m-acc" class="text-xl font-bold text-cyan-300 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg border border-slate-700 p-3">
+          <p class="text-xs text-slate-500">Верное направление</p>
+          <p id="m-dir" class="text-xl font-bold text-lime-300 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg border border-slate-700 p-3">
+          <p class="text-xs text-slate-500">Средняя ошибка (MAE)</p>
+          <p id="m-mae" class="text-xl font-bold text-fuchsia-300 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg border border-slate-700 p-3">
+          <p class="text-xs text-slate-500">Пик MN9</p>
+          <p id="m-mn9" class="text-xl font-bold text-amber-300 tabular-nums">—</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="text-center text-xs text-slate-600 mt-8">Тестовые данные: случайная генерация, без реальных измерений.</footer>
+
+<script>
+  const COLORS = { vision: '#22d3ee', odor: '#e879f9', humidity: '#a3e635', mn9: '#fbbf24' };
+  const N = 60;
+  const SPLIT = 40;
+  const MODES = {
+    weather: {
+      labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+      chart: 'Погода, °C',
+      base: 15, step: 0.8, unit: '°C', start: 14, decimals: 1
+    },
+    finance: {
+      labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+      chart: 'Финансовый рынок, USD',
+      base: 42000, step: 650, unit: '$', start: 42000, decimals: 0
+    }
+  };
+  let mode = 'weather';
+
+  const sliders = { vision: $('vision'), odor: $('odor'), humidity: $('humidity') };
+  function $(id) { return document.getElementById(id); }
+
+  const ctx = $('chart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: N }, (_, i) => i + 1),
+      datasets: [
+        { label: 'Реальность', data: [], borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,.1)', borderWidth: 2, pointRadius: 0, tension: .35, fill: false },
+        { label: 'Прогноз Мухи', data: [], borderColor: '#e879f9', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, tension: .35, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 700 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace' } } } },
+      scales: {
+        x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { color: 'rgba(148,163,184,.08)' } },
+        y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.08)' } }
+      }
+    }
+  });
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function fmtVal(v) { return v.toLocaleString('ru-RU', { maximumFractionDigits: MODES[mode].decimals, minimumFractionDigits: MODES[mode].decimals }); }
+
+  function readSliders() {
+    return {
+      vision: +sliders.vision.value / 200,
+      odor: +sliders.odor.value / 200,
+      humidity: +sliders.humidity.value / 200
+    };
+  }
+
+  function mn9Rate(s) {
+    const raw = 200 * (0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity) + rnd(-12, 12);
+    return Math.max(0, Math.min(200, raw));
+  }
+
+  function renderOrgans() {
+    const s = readSliders();
+    const hz = { vision: s.vision * 200, odor: s.odor * 200, humidity: s.humidity * 200 };
+    $('val-vision').textContent = Math.round(hz.vision) + ' Гц';
+    $('val-odor').textContent = Math.round(hz.odor) + ' Гц';
+    $('val-humidity').textContent = Math.round(hz.humidity) + ' Гц';
+    $('stat-vision').textContent = Math.round(hz.vision);
+    $('stat-odor').textContent = Math.round(hz.odor);
+    $('stat-humidity').textContent = Math.round(hz.humidity);
+
+    const mn9 = Math.round(mn9Rate(s));
+    $('mn9-live').textContent = mn9 + ' Гц';
+
+    ['eyeL', 'eyeR'].forEach(id => $(id).setAttribute('opacity', (0.25 + 0.75 * s.vision).toFixed(3)));
+    $('eyesHalo').setAttribute('opacity', (0.5 * s.vision).toFixed(3));
+    $('antennae').querySelectorAll('use').forEach(u => u.setAttribute('stroke-width', (2 + 4 * s.odor).toFixed(2)));
+    $('antennaeGlow').setAttribute('opacity', (0.9 * s.odor).toFixed(3));
+    $('brainHalo').setAttribute('opacity', (0.75 * s.humidity).toFixed(3));
+    $('brain').querySelector('circle').setAttribute('opacity', (0.3 * s.humidity).toFixed(3));
+    $('mn9').setAttribute('opacity', (0.4 + 0.6 * mn9 / 200).toFixed(3));
+    $('mn9Halo').setAttribute('opacity', (mn9 / 200).toFixed(3));
+    $('legsGlow').setAttribute('opacity', (mn9 / 200 * 0.9).toFixed(3));
+    pulseSpeed = 0.6 + 2.4 * ((s.vision + s.odor + s.humidity) / 3);
+    $('antennaeGlow').querySelector('.pulse-inner').style.setProperty('--dur', (2.4 - 1.8 * s.odor).toFixed(2) + 's');
+  }
+
+  let pulseSpeed = 1;
+  const impulseGroup = $('impulses');
+  const pulses = [];
+  const routes = [
+    { key: 'odor', paths: ['pathAntL', 'pathAntR'], color: COLORS.odor, weight: s => s.odor },
+    { key: 'vision', paths: [], color: COLORS.vision, weight: s => s.vision },
+    { key: 'humidity', paths: ['pathBrain'], color: COLORS.humidity, weight: s => s.humidity },
+    { key: 'mn9', paths: ['pathProb'], color: COLORS.mn9, weight: s => mn9Rate(s) / 200 }
+  ];
+
+  function spawnPulse(pathId, color) {
+    const src = document.getElementById(pathId);
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('r', '4');
+    c.setAttribute('fill', color);
+    c.setAttribute('filter', 'url(#blurSm)');
+    impulseGroup.appendChild(c);
+    pulses.push({ el: c, path: src, t: 0, speed: 0.35 + Math.random() * 0.2 });
+  }
+
+  let lastSpawn = 0;
+  function tick(now) {
+    const s = readSliders();
+    if (now - lastSpawn > 500) {
+      lastSpawn = now;
+      routes.forEach(r => {
+        const w = r.weight(s);
+        if (w > 0.15 && Math.random() < w) {
+          r.paths.forEach(p => spawnPulse(p, r.color));
+        }
+      });
+    }
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i];
+      p.t += 0.016 * p.speed * pulseSpeed;
+      if (p.t >= 1) { p.el.remove(); pulses.splice(i, 1); continue; }
+      const len = p.path.getTotalLength();
+      const pt = p.path.getPointAtLength(p.t * len);
+      p.el.setAttribute('cx', pt.x);
+      p.el.setAttribute('cy', pt.y);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function generate() {
+    const cfg = MODES[mode];
+    const truth = [];
+    let v = cfg.start;
+    for (let i = 0; i < N; i++) {
+      v += rnd(-1, 1) * cfg.step + Math.sin(i / 6) * cfg.step * 0.6;
+      truth.push(v);
+    }
+    const s = readSliders();
+    const fidelity = Math.max(0.05, 0.4 + 0.5 * (s.vision * 0.4 + s.odor * 0.35 + s.humidity * 0.25));
+    const pred = truth.map((x, i) => {
+      const sigma = i < SPLIT ? cfg.step * 0.2 : cfg.step * (1.6 - fidelity);
+      return x + rnd(-1, 1) * sigma;
+    });
+    return { truth, pred };
+  }
+
+  function runSimulation() {
+    const btn = $('run');
+    btn.disabled = true;
+    btn.textContent = '⏳ Симуляция...';
+    setTimeout(() => {
+      const { truth, pred } = generate();
+      const s = readSliders();
+      const mn9 = Math.round(mn9Rate(s));
+
+      chart.data.datasets[0].data = truth;
+      chart.data.datasets[1].data = pred.map((x, i) => (i < SPLIT ? null : x));
+      chart.data.datasets[0].label = 'Реальность';
+      chart.update();
+
+      const future = truth.slice(SPLIT);
+      const futurePred = pred.slice(SPLIT);
+      const errs = future.map((x, i) => Math.abs(x - futurePred[i]));
+      const mae = errs.reduce((a, b) => a + b, 0) / errs.length;
+      const meanAbs = future.reduce((a, b) => a + Math.abs(b), 0) / future.length;
+      const acc = Math.max(0, 100 - (mae / meanAbs) * 100);
+
+      let correct = 0;
+      for (let i = 1; i < future.length; i++) {
+        const dTrue = future[i] - future[i - 1];
+        const dPred = futurePred[i] - futurePred[i - 1];
+        if (Math.sign(dTrue) === Math.sign(dPred)) correct++;
+      }
+      const dir = (correct / (future.length - 1)) * 100;
+
+      const last = pred[N - 1];
+      const base = pred[SPLIT - 1];
+      const up = last > base;
+      const proboscis = mn9 > 120 ? 'вытянула хоботок' : 'втянула хоботок';
+      $('verdict').innerHTML =
+        `Активность нейрона MN9: <span class="text-amber-300">${mn9} Гц</span> ->  Муха ${proboscis} -> ` +
+        `ПРОГНОЗ: <span class="${up ? 'verdict-up text-lime-300' : 'verdict-down text-red-400'} font-bold">` +
+        (up ? 'БУДЕТ РОСТ 📈' : 'БУДЕТ СПАД 📉') + `</span>`;
+
+      $('m-acc').textContent = acc.toFixed(1) + '%';
+      $('m-dir').textContent = dir.toFixed(0) + '%';
+      $('m-mae').textContent = fmtVal(mae);
+      $('m-mn9').textContent = mn9 + ' Гц';
+
+      btn.disabled = false;
+      btn.textContent = '▶ Запустить симуляцию мозга';
+    }, 350);
+  }
+
+  function setMode(m) {
+    mode = m;
+    const cfg = MODES[m];
+    $('tab-weather').classList.toggle('tab-active', m === 'weather');
+    $('tab-weather').classList.toggle('text-slate-400', m !== 'weather');
+    $('tab-finance').classList.toggle('tab-active', m === 'finance');
+    $('tab-finance').classList.toggle('text-slate-400', m !== 'finance');
+    $('chart-mode').textContent = cfg.chart;
+    $('label-vision').textContent = cfg.labels[0];
+    $('label-odor').textContent = cfg.labels[1];
+    $('label-humidity').textContent = cfg.labels[2];
+    chart.data.datasets[0].data = [];
+    chart.data.datasets[1].data = [];
+    chart.update();
+    $('verdict').textContent = 'Режим переключён. Нажми «Запустить симуляцию мозга».';
+  }
+
+  Object.values(sliders).forEach(el => el.addEventListener('input', renderOrgans));
+  $('run').addEventListener('click', runSimulation);
+  $('tab-weather').addEventListener('click', () => setMode('weather'));
+  $('tab-finance').addEventListener('click', () => setMode('finance'));
+
+  renderOrgans();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
