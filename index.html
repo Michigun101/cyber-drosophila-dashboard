@@ -414,7 +414,7 @@ const WING_ROOT = new THREE.Vector3(0.22, 0.5, 0);
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 function wingFrame(side) {
-  const span = new THREE.Vector3(-0.5, 0.12, side * 0.87).normalize();
+  const span = new THREE.Vector3(-0.8, -0.14, side * 0.6).normalize();
   const chord = X_AXIS.clone().addScaledVector(span, -X_AXIS.dot(span)).normalize();
   return { span, chord, root: WING_ROOT.clone().add(new THREE.Vector3(0, 0, side * 0.12)) };
 }
