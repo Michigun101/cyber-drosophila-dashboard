@@ -6,143 +6,171 @@
 <title>Cyber-Drosophila · Коннектом мухи</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
 </script>
 <style>
+  :root { --ease: cubic-bezier(.22, .61, .36, 1); }
   body {
-    background: radial-gradient(ellipse at top, #0f1a2e 0%, #05070d 70%);
+    background:
+      radial-gradient(900px 500px at 8% -8%, rgba(34, 211, 238, .09), transparent 70%),
+      radial-gradient(800px 600px at 105% 8%, rgba(217, 70, 239, .07), transparent 70%),
+      #060912;
     color: #cbd5e1;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
   .panel {
-    background: rgba(10, 16, 30, 0.75);
-    border: 1px solid rgba(34, 211, 238, 0.25);
-    box-shadow: 0 0 24px rgba(34, 211, 238, 0.08), inset 0 0 24px rgba(34, 211, 238, 0.04);
-    backdrop-filter: blur(6px);
-    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, .72), rgba(9, 13, 25, .78));
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 24px 48px -28px rgba(0, 0, 0, .7);
+    backdrop-filter: blur(14px);
+    transition: border-color .5s var(--ease), box-shadow .5s var(--ease);
+    animation: rise .8s var(--ease) both;
   }
+  .panel:hover {
+    border-color: rgba(34, 211, 238, .22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 24px 56px -28px rgba(8, 145, 178, .35);
+  }
+  main > section:nth-child(2) .panel { animation-delay: .08s; }
+  main > section:nth-child(3) .panel { animation-delay: .16s; }
   .game-title {
-    font-family: 'Orbitron', ui-monospace, monospace;
-    font-weight: 900;
-    font-size: clamp(2.4rem, 7vw, 5rem);
-    letter-spacing: .08em;
-    line-height: 1.05;
-    color: #e0faff;
-    text-shadow:
-      0 0 2px #fff,
-      0 0 8px #22d3ee,
-      0 0 18px #22d3ee,
-      0 0 36px rgba(8, 145, 178, .9),
-      0 0 64px rgba(8, 145, 178, .6);
-    animation: flicker 6s infinite;
+    font-family: 'Orbitron', ui-sans-serif, sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5.5vw, 4rem);
+    letter-spacing: .06em;
+    line-height: 1.1;
+    background: linear-gradient(95deg, #e0faff 0%, #67e8f9 45%, #f0abfc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 22px rgba(34, 211, 238, .22));
+    animation: rise 1s var(--ease) both;
   }
-  .game-title .hot { color: #f0abfc; text-shadow: 0 0 2px #fff, 0 0 8px #e879f9, 0 0 18px #d946ef, 0 0 36px rgba(217,70,239,.8); }
-  .neon-bar {
-    height: 2px; margin: 14px auto 0; width: min(520px, 80%);
-    background: linear-gradient(90deg, transparent, #22d3ee, #e879f9, transparent);
-    box-shadow: 0 0 10px #22d3ee, 0 0 14px #e879f9;
+  .game-title .hot { background: none; -webkit-text-fill-color: #f0abfc; }
+  .hairline {
+    height: 1px; margin: 18px auto 0; width: min(420px, 70%);
+    background: linear-gradient(90deg, transparent, rgba(103, 232, 249, .6), rgba(240, 171, 252, .6), transparent);
   }
-  @keyframes flicker {
-    0%, 100% { opacity: 1; }
-    92% { opacity: 1; }
-    93% { opacity: .82; }
-    94% { opacity: 1; }
-    97% { opacity: .9; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; outline: none; cursor: pointer;
   }
-  .scanline::after {
-    content: "";
-    position: absolute; inset: 0; pointer-events: none; border-radius: 14px;
-    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px);
-  }
-  input[type=range] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 4px; outline: none; cursor: pointer; }
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-    background: #0b1222; border: 2px solid currentColor; box-shadow: 0 0 10px currentColor; cursor: pointer;
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #f8fafc; border: none; cursor: pointer;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent), 0 2px 8px rgba(0, 0, 0, .4);
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease);
   }
+  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.15); }
   input[type=range]::-moz-range-thumb {
-    width: 18px; height: 18px; border-radius: 50%; background: #0b1222; border: 2px solid currentColor; box-shadow: 0 0 10px currentColor;
+    width: 16px; height: 16px; border-radius: 50%; background: #f8fafc; border: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);
   }
-  .verdict-up { text-shadow: 0 0 12px #4ade80; }
-  .verdict-down { text-shadow: 0 0 12px #f87171; }
+  .verdict-up { text-shadow: 0 0 14px rgba(74, 222, 128, .45); }
+  .verdict-down { text-shadow: 0 0 14px rgba(248, 113, 113, .45); }
   .btn-run {
-    background: linear-gradient(90deg, #06b6d4, #d946ef);
-    box-shadow: 0 0 18px rgba(217, 70, 239, 0.45);
-    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    background: linear-gradient(120deg, #0891b2 0%, #7c3aed 55%, #c026d3 100%);
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    box-shadow: 0 12px 32px -12px rgba(192, 38, 211, .55);
+    transition: transform .35s var(--ease), box-shadow .35s var(--ease), background-position .6s var(--ease);
   }
-  .btn-run:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(34, 211, 238, 0.6); filter: brightness(1.1); }
-  .btn-run:active { transform: translateY(0) scale(.98); }
+  .btn-run:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background-position: 100% 50%;
+    box-shadow: 0 16px 36px -12px rgba(34, 211, 238, .5);
+  }
+  .btn-run:active:not(:disabled) { transform: translateY(0) scale(.99); }
   .btn-run:disabled { opacity: .6; cursor: wait; }
-  .tab-active { background: rgba(34, 211, 238, .15); color: #67e8f9; box-shadow: 0 0 12px rgba(34, 211, 238, .35); }
+  .tab-active {
+    background: rgba(34, 211, 238, .12); color: #a5f3fc;
+    box-shadow: inset 0 0 0 1px rgba(34, 211, 238, .35);
+  }
+  .tab-btn { transition: background-color .35s var(--ease), color .35s var(--ease), box-shadow .35s var(--ease); }
+  .tile {
+    border: 1px solid rgba(148, 163, 184, .12);
+    background: rgba(255, 255, 255, .02);
+    border-radius: 14px;
+    transition: border-color .35s var(--ease), background-color .35s var(--ease);
+  }
+  .tile:hover { border-color: rgba(148, 163, 184, .25); background: rgba(255, 255, 255, .04); }
   #fly3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body class="p-4 md:p-6">
 
-<header class="mb-6 text-center">
+<header class="mb-8 text-center">
   <h1 class="game-title">CYBER<span class="hot">-</span>DROSOPHILA</h1>
-  <div class="neon-bar"></div>
-  <p class="text-sm text-slate-400 mt-3">Прогнозирование временных рядов коннектомом мухи</p>
+  <div class="hairline"></div>
+  <p class="text-sm text-slate-400 mt-4 tracking-wide">Прогнозирование временных рядов коннектомом мухи</p>
 </header>
 
-<div class="flex justify-center mb-6">
-  <div class="inline-flex rounded-full border border-cyan-500/30 p-1 bg-slate-900/70">
-    <button id="tab-weather" class="tab-active px-5 py-2 rounded-full text-sm transition">Погода · Ухта</button>
-    <button id="tab-finance" class="px-5 py-2 rounded-full text-sm text-slate-400 transition">Финансовый рынок</button>
+<div class="flex justify-center mb-8">
+  <div class="inline-flex rounded-full border border-white/10 p-1 bg-white/[0.03] backdrop-blur">
+    <button id="tab-weather" class="tab-btn tab-active px-5 py-2 rounded-full text-sm font-medium">Погода · Ухта</button>
+    <button id="tab-finance" class="tab-btn px-5 py-2 rounded-full text-sm font-medium text-slate-400 hover:text-slate-200">Финансовый рынок</button>
   </div>
 </div>
 
 <main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-  <section class="panel scanline relative p-5 xl:col-span-3 space-y-6">
-    <h2 class="text-sm tracking-widest text-cyan-300">ПУЛЬТ СТИМУЛЯЦИИ РЕЦЕПТОРОВ</h2>
+  <section class="panel relative p-6 xl:col-span-3 space-y-6">
+    <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Пульт стимуляции рецепторов</h2>
 
     <div id="sliders" class="space-y-5">
       <div>
         <div class="flex justify-between text-xs mb-2">
           <span id="label-vision" class="text-cyan-300">Зрение (График цены/температуры)</span>
-          <span id="val-vision" class="text-cyan-200 tabular-nums">0 Гц</span>
+          <span id="val-vision" class="text-cyan-200 tabular-nums whitespace-nowrap">0 Гц</span>
         </div>
         <input id="vision" type="range" min="0" max="200" value="100" class="w-full" style="color:#22d3ee; background: linear-gradient(90deg,#164e63,#22d3ee);">
       </div>
       <div>
         <div class="flex justify-between text-xs mb-2">
           <span id="label-odor" class="text-fuchsia-300">Усики Or56a (Запах новостей / Давление)</span>
-          <span id="val-odor" class="text-fuchsia-200 tabular-nums">0 Гц</span>
+          <span id="val-odor" class="text-fuchsia-200 tabular-nums whitespace-nowrap">0 Гц</span>
         </div>
         <input id="odor" type="range" min="0" max="200" value="100" class="w-full" style="color:#e879f9; background: linear-gradient(90deg,#701a75,#e879f9);">
       </div>
       <div>
         <div class="flex justify-between text-xs mb-2">
           <span id="label-humidity" class="text-lime-300">Гигрорецепторы (Влажность / Объем торгов)</span>
-          <span id="val-humidity" class="text-lime-200 tabular-nums">0 Гц</span>
+          <span id="val-humidity" class="text-lime-200 tabular-nums whitespace-nowrap">0 Гц</span>
         </div>
         <input id="humidity" type="range" min="0" max="200" value="100" class="w-full" style="color:#a3e635; background: linear-gradient(90deg,#365314,#a3e635);">
       </div>
     </div>
 
-    <div class="rounded-lg border border-amber-400/30 p-3 bg-amber-400/5">
+    <div class="rounded-2xl border border-amber-400/20 p-4 bg-amber-400/[0.04]">
       <p class="text-xs text-amber-300/80">Активность MN9 (хоботок), прогноз</p>
-      <p class="text-2xl font-bold text-amber-300 tabular-nums" id="mn9-live">0 Гц</p>
+      <p class="text-2xl font-semibold text-amber-300 tabular-nums mt-1" id="mn9-live">0 Гц</p>
     </div>
 
-    <div class="rounded-lg border border-cyan-400/30 p-3 bg-cyan-400/5">
+    <div class="rounded-2xl border border-cyan-400/20 p-4 bg-cyan-400/[0.04]">
       <p id="live-label" class="text-xs text-cyan-300/80">Сейчас в Ухте</p>
-      <p class="text-2xl font-bold text-cyan-300 tabular-nums" id="live-value">—</p>
+      <p class="text-2xl font-semibold text-cyan-300 tabular-nums mt-1" id="live-value">—</p>
     </div>
 
-    <button id="run" class="btn-run w-full py-4 rounded-xl text-white font-bold tracking-wide">
+    <button id="run" class="btn-run w-full py-4 rounded-2xl text-white font-semibold tracking-wide">
       ▶ Запустить симуляцию мозга
     </button>
   </section>
 
-  <section class="panel relative p-5 xl:col-span-5 flex flex-col">
+  <section class="panel relative p-6 xl:col-span-5 flex flex-col">
     <div class="flex items-center justify-between mb-2">
-      <h2 class="text-sm tracking-widest text-cyan-300">КОННЕКТОМ // 3D-МУХА</h2>
+      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Коннектом · 3D-муха</h2>
       <span class="text-xs text-slate-500">тяни мышью, чтобы повернуть</span>
     </div>
     <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] cursor-grab"></div>
@@ -155,17 +183,17 @@
       <span class="text-lime-200/70">● Лапки</span>
     </div>
 
-    <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-      <div class="rounded-lg bg-cyan-400/5 border border-cyan-400/20 p-2"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums">0</div></div>
-      <div class="rounded-lg bg-fuchsia-400/5 border border-fuchsia-400/20 p-2"><span class="text-fuchsia-300">Усики</span><div id="stat-odor" class="tabular-nums">0</div></div>
-      <div class="rounded-lg bg-lime-400/5 border border-lime-400/20 p-2"><span class="text-lime-300">Мозг</span><div id="stat-humidity" class="tabular-nums">0</div></div>
+    <div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
+      <div class="tile p-3"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
+      <div class="tile p-3"><span class="text-fuchsia-300">Усики</span><div id="stat-odor" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
+      <div class="tile p-3"><span class="text-lime-300">Мозг</span><div id="stat-humidity" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
     </div>
   </section>
 
   <section class="xl:col-span-4 space-y-6">
-    <div class="panel p-5">
+    <div class="panel p-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm tracking-widest text-cyan-300">ГРАФИК ПРОГНОЗА</h2>
+        <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">График прогноза</h2>
         <span id="chart-mode" class="text-xs text-slate-500 text-right"></span>
       </div>
       <div class="relative h-64">
@@ -173,29 +201,29 @@
       </div>
     </div>
 
-    <div class="panel p-5">
-      <h2 class="text-sm tracking-widest text-cyan-300 mb-3">ВЕРДИКТ МУХИ</h2>
+    <div class="panel p-6">
+      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90 mb-3">Вердикт мухи</h2>
       <p id="verdict" class="text-base leading-relaxed text-slate-200">Загружаю данные…</p>
     </div>
 
-    <div class="panel p-5">
-      <h2 class="text-sm tracking-widest text-cyan-300 mb-3">МЕТРИКИ</h2>
+    <div class="panel p-6">
+      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90 mb-3">Метрики</h2>
       <div class="grid grid-cols-2 gap-3">
-        <div class="rounded-lg border border-slate-700 p-3">
+        <div class="tile p-4">
           <p class="text-xs text-slate-500">Точность прогноза</p>
-          <p id="m-acc" class="text-xl font-bold text-cyan-300 tabular-nums">—</p>
+          <p id="m-acc" class="text-xl font-semibold text-cyan-300 tabular-nums mt-1">—</p>
         </div>
-        <div class="rounded-lg border border-slate-700 p-3">
+        <div class="tile p-4">
           <p class="text-xs text-slate-500">Верное направление</p>
-          <p id="m-dir" class="text-xl font-bold text-lime-300 tabular-nums">—</p>
+          <p id="m-dir" class="text-xl font-semibold text-lime-300 tabular-nums mt-1">—</p>
         </div>
-        <div class="rounded-lg border border-slate-700 p-3">
+        <div class="tile p-4">
           <p class="text-xs text-slate-500">Средняя ошибка (MAE)</p>
-          <p id="m-mae" class="text-xl font-bold text-fuchsia-300 tabular-nums">—</p>
+          <p id="m-mae" class="text-xl font-semibold text-fuchsia-300 tabular-nums mt-1">—</p>
         </div>
-        <div class="rounded-lg border border-slate-700 p-3">
+        <div class="tile p-4">
           <p class="text-xs text-slate-500">Пик MN9</p>
-          <p id="m-mn9" class="text-xl font-bold text-amber-300 tabular-nums">—</p>
+          <p id="m-mn9" class="text-xl font-semibold text-amber-300 tabular-nums mt-1">—</p>
         </div>
       </div>
     </div>
@@ -633,7 +661,10 @@ const chart = new Chart($('chart').getContext('2d'), {
   options: {
     responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace' } } } },
+    plugins: {
+      legend: { labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16 } },
+      tooltip: { backgroundColor: 'rgba(9,13,25,.92)', borderColor: 'rgba(148,163,184,.2)', borderWidth: 1, padding: 10, cornerRadius: 10, titleColor: '#e2e8f0', bodyColor: '#cbd5e1', displayColors: true }
+    },
     scales: {
       x: { ticks: { color: '#64748b', maxTicksLimit: 8, maxRotation: 0 }, grid: { color: 'rgba(148,163,184,.08)' } },
       y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.08)' } }
