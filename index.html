@@ -214,6 +214,8 @@ const wrap = document.getElementById('fly3d');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 wrap.appendChild(renderer.domElement);
 const cv = renderer.domElement;
 
@@ -223,7 +225,7 @@ camera.position.set(0, 1.3, 8.4);
 camera.lookAt(0.05, -0.05, 0);
 
 scene.add(new THREE.HemisphereLight(0x67e8f9, 0x1e1b4b, 1.0));
-const key = new THREE.DirectionalLight(0xffffff, 1.8);
+const key = new THREE.DirectionalLight(0xffffff, 2.0);
 key.position.set(3, 5, 4);
 scene.add(key);
 const rim = new THREE.PointLight(0xe879f9, 8, 16);
@@ -239,6 +241,7 @@ function canvasTex(w, h, draw) {
   draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
   return t;
 }
 
@@ -289,116 +292,26 @@ const abdomenTex = canvasTex(64, 256, (g, w, h) => {
   g.fillRect(0, 0, w, h);
   g.fillStyle = '#1c1408';
   [0.2, 0.36, 0.52, 0.68, 0.84].forEach(b => g.fillRect(0, b * h, w, h * 0.09));
-  g.fillStyle = 'rgba(255,240,200,0.15)';
-  for (let y = 0; y < h; y += 6) g.fillRect(0, y, w, 1);
 });
 
-const wingTex = canvasTex(1024, 420, (g, w, h) => {
-  const P = (x, y) => [x * w, y * h];
-  let seed = 11;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const outline = () => {
-    g.beginPath();
-    g.moveTo(...P(0.97, 0.42));
-    g.bezierCurveTo(...P(0.92, 0.04), ...P(0.42, -0.04), ...P(0.05, 0.4));
-    g.bezierCurveTo(...P(-0.02, 0.55), ...P(0.0, 0.72), ...P(0.22, 0.87));
-    g.bezierCurveTo(...P(0.46, 1.02), ...P(0.82, 0.98), ...P(0.97, 0.62));
-    g.closePath();
-  };
-  const grad = g.createLinearGradient(0, 0, w, 0);
-  grad.addColorStop(0, 'rgba(150,100,40,0.3)');
-  grad.addColorStop(1, 'rgba(235,185,100,0.2)');
-  outline();
-  g.fillStyle = grad;
-  g.fill();
-
-  g.save();
-  outline();
-  g.clip();
-
-  for (let i = 0; i < 40; i++) {
-    const x = 0.1 + rnd() * 0.85, y = 0.1 + rnd() * 0.8;
-    const dx = (rnd() - 0.5) * 0.08, dy = (rnd() - 0.5) * 0.08;
-    g.beginPath();
-    g.moveTo(...P(x, y));
-    g.quadraticCurveTo(...P(x + dx * 0.5, y + dy * 0.5 + 0.02), ...P(x + dx, y + dy));
-    g.strokeStyle = 'rgba(200,140,70,0.35)';
-    g.lineWidth = 1;
-    g.stroke();
-  }
-
-  const veins = [
-    [[[0.98, 0.18], [0.7, 0.02], [0.3, 0.08], [0.04, 0.36]], 7],
-    [[[0.97, 0.3], [0.66, 0.16], [0.32, 0.2], [0.08, 0.44]], 4.5],
-    [[[0.96, 0.42], [0.66, 0.34], [0.34, 0.38], [0.1, 0.5]], 4],
-    [[[0.95, 0.52], [0.66, 0.5], [0.36, 0.54], [0.14, 0.58]], 3.5],
-    [[[0.94, 0.62], [0.66, 0.64], [0.36, 0.66], [0.16, 0.7]], 3.5],
-    [[[0.92, 0.74], [0.66, 0.8], [0.36, 0.82], [0.2, 0.8]], 3]
-  ];
-  veins.forEach(([pts, lw]) => {
-    const path = () => {
-      g.beginPath();
-      g.moveTo(...P(...pts[0]));
-      g.bezierCurveTo(...P(...pts[1]), ...P(...pts[2]), ...P(...pts[3]));
-    };
-    path();
-    g.strokeStyle = 'rgba(95,55,18,0.9)';
-    g.lineWidth = lw + 2;
-    g.stroke();
-    path();
-    g.strokeStyle = 'rgba(240,195,120,0.95)';
-    g.lineWidth = lw;
-    g.stroke();
-  });
-
-  const crosses = [[[0.56, 0.38], [0.56, 0.5]], [[0.42, 0.53], [0.42, 0.64]], [[0.3, 0.2], [0.33, 0.38]], [[0.2, 0.5], [0.22, 0.6]]];
-  crosses.forEach(([a, b]) => {
-    const path = () => {
-      g.beginPath();
-      g.moveTo(...P(...a));
-      g.lineTo(...P(...b));
-    };
-    path();
-    g.strokeStyle = 'rgba(95,55,18,0.9)';
-    g.lineWidth = 3.5;
-    g.stroke();
-    path();
-    g.strokeStyle = 'rgba(240,195,120,0.95)';
-    g.lineWidth = 2;
-    g.stroke();
-  });
-
-  for (let i = 0; i < 160; i++) {
-    g.beginPath();
-    g.arc(...P(rnd(), rnd()), 1 + rnd(), 0, Math.PI * 2);
-    g.fillStyle = 'rgba(240,200,130,0.4)';
-    g.fill();
-  }
-  g.restore();
-
-  outline();
-  g.strokeStyle = 'rgba(240,195,120,0.85)';
-  g.lineWidth = 5;
-  g.stroke();
-  g.beginPath();
-  g.arc(...P(0.97, 0.5), 16, 0, Math.PI * 2);
-  g.fillStyle = 'rgba(95,55,18,0.9)';
-  g.fill();
+const chitin = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
+  color, roughness: 0.42, metalness: 0.05, clearcoat: 0.5, clearcoatRoughness: 0.35, ...extra
 });
-
-const bodyMat = new THREE.MeshStandardMaterial({ map: abdomenTex, roughness: 0.5, metalness: 0.2 });
-const thoraxMat = new THREE.MeshStandardMaterial({ color: 0x6b4f1d, roughness: 0.45, metalness: 0.25 });
-const headMat = new THREE.MeshStandardMaterial({ color: 0xa8843f, roughness: 0.4, metalness: 0.2 });
-const eyeMat = new THREE.MeshStandardMaterial({
-  map: eyeTex, emissiveMap: eyeTex, emissive: 0x22d3ee, emissiveIntensity: 0.2, roughness: 0.25, metalness: 0.1
+const bodyMat = chitin(0xffffff, { map: abdomenTex });
+const thoraxMat = chitin(0x6b4f1d);
+const headMat = chitin(0xa8843f);
+const eyeMat = new THREE.MeshPhysicalMaterial({
+  map: eyeTex, emissiveMap: eyeTex, emissive: 0x22d3ee, emissiveIntensity: 0.2, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1
 });
-const antennaMat = new THREE.MeshStandardMaterial({ color: 0x4a1d5c, emissive: 0xe879f9, emissiveIntensity: 0.2, roughness: 0.4 });
-const ringMat = new THREE.MeshStandardMaterial({ color: 0x365314, emissive: 0xa3e635, emissiveIntensity: 0.2, roughness: 0.4 });
-const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, emissive: 0xa3e635, emissiveIntensity: 0, roughness: 0.5 });
-const proboscisMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
-const mn9Mat = new THREE.MeshStandardMaterial({ color: 0x78350f, emissive: 0xfbbf24, emissiveIntensity: 0.3, roughness: 0.3 });
-const wingMat = new THREE.MeshStandardMaterial({
-  map: wingTex, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, roughness: 0.2, metalness: 0
+const antennaMat = chitin(0x4a1d5c, { emissive: 0xe879f9, emissiveIntensity: 0.2 });
+const ringMat = chitin(0x365314, { emissive: 0xa3e635, emissiveIntensity: 0.2 });
+const legMat = chitin(0x475569, { emissive: 0xa3e635, emissiveIntensity: 0 });
+const proboscisMat = chitin(0x94a3b8);
+const mn9Mat = chitin(0x78350f, { emissive: 0xfbbf24, emissiveIntensity: 0.3 });
+const veinMat = new THREE.MeshStandardMaterial({ color: 0xc98a3a, emissive: 0x7c4a12, emissiveIntensity: 0.3, roughness: 0.5 });
+const membraneMat = new THREE.MeshPhysicalMaterial({
+  color: 0xe0a85a, transparent: true, opacity: 0.3, roughness: 0.12, metalness: 0,
+  iridescence: 0.35, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false
 });
 
 function ellipsoid(mat, [x, y, z], [ax, ay, az]) {
@@ -414,8 +327,8 @@ ellipsoid(bodyMat, [-0.95, -0.05, 0], [0.95, 0.5, 0.46]);
 ellipsoid(thoraxMat, [0.1, 0.12, 0], [0.5, 0.42, 0.44]);
 ellipsoid(headMat, [1.02, 0.12, 0], [0.36, 0.36, 0.36]);
 
-const eyeL = ellipsoid(eyeMat, [1.14, 0.2, 0.3], [0.26, 0.28, 0.22]);
-const eyeR = ellipsoid(eyeMat, [1.14, 0.2, -0.3], [0.26, 0.28, 0.22]);
+ellipsoid(eyeMat, [1.14, 0.2, 0.3], [0.26, 0.28, 0.22]);
+ellipsoid(eyeMat, [1.14, 0.2, -0.3], [0.26, 0.28, 0.22]);
 const eyesHalo = halo(0x22d3ee, 2.6, 1.2, 0.2, 0);
 
 const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.035, 16, 48), ringMat);
@@ -424,14 +337,32 @@ ring.position.set(1.37, 0.1, 0);
 fly.add(ring);
 const brainHalo = halo(0xa3e635, 1.1, 1.42, 0.1, 0);
 
+function segment(a, b, r, mat) {
+  const mid = a.clone().add(b).multiplyScalar(0.5);
+  const dir = b.clone().sub(a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, dir.length(), 14), mat);
+  m.position.copy(mid);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return m;
+}
+
+function joint(p, r, mat) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+  m.position.copy(p);
+  return m;
+}
+
 const legPlan = [
-  [[0.42, -0.3, 0.25], [0.6, -0.7, 0.72], [0.8, -0.95, 0.95], [0.95, -1.1, 1.08]],
-  [[0.1, -0.3, 0.25], [0.12, -0.72, 0.75], [0.1, -0.98, 1.02], [0.05, -1.12, 1.2]],
-  [[-0.22, -0.3, 0.25], [-0.48, -0.7, 0.75], [-0.7, -0.96, 1.0], [-0.86, -1.1, 1.15]]
+  { hip: [0.42, -0.22, 0.2], knee: [0.72, -0.62, 0.52], ankle: [1.0, -0.98, 0.66], foot: [1.2, -1.2, 0.72] },
+  { hip: [0.08, -0.22, 0.22], knee: [0.12, -0.7, 0.86], ankle: [0.06, -1.0, 1.08], foot: [0.0, -1.2, 1.2] },
+  { hip: [-0.24, -0.22, 0.22], knee: [-0.62, -0.66, 0.84], ankle: [-0.9, -1.0, 1.02], foot: [-1.1, -1.2, 1.12] }
 ];
-legPlan.forEach(pts => [1, -1].forEach(side => {
-  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new THREE.Vector3(x, y, side * z)));
-  fly.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.035, 8), legMat));
+const legRadius = [0.055, 0.04, 0.028];
+const jointRadius = [0.07, 0.06, 0.045, 0.03];
+legPlan.forEach(p => [1, -1].forEach(side => {
+  const pts = [p.hip, p.knee, p.ankle, p.foot].map(([x, y, z]) => new THREE.Vector3(x, y, side * z));
+  pts.forEach((v, i) => fly.add(joint(v, jointRadius[i], legMat)));
+  for (let i = 0; i < 3; i++) fly.add(segment(pts[i], pts[i + 1], legRadius[i], legMat));
 }));
 
 function antennaCurve(side) {
@@ -444,9 +375,7 @@ function antennaCurve(side) {
 const antennaCurves = [antennaCurve(1), antennaCurve(-1)];
 antennaCurves.forEach(c => {
   fly.add(new THREE.Mesh(new THREE.TubeGeometry(c, 32, 0.028, 8), antennaMat));
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), antennaMat);
-  tip.position.copy(c.getPoint(1));
-  fly.add(tip);
+  fly.add(joint(c.getPoint(1), 0.05, antennaMat));
 });
 const antennaHalo = halo(0xe879f9, 1.3, 1.42, 0.68, 0);
 
@@ -457,21 +386,90 @@ const proboscisCurve = new THREE.CatmullRomCurve3([
   new THREE.Vector3(1.6, -0.66, 0)
 ]);
 fly.add(new THREE.Mesh(new THREE.TubeGeometry(proboscisCurve, 32, 0.03, 8), proboscisMat));
-const mn9Tip = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 16), mn9Mat);
-mn9Tip.position.copy(proboscisCurve.getPoint(1));
-fly.add(mn9Tip);
+fly.add(joint(proboscisCurve.getPoint(1), 0.075, mn9Mat));
 const mn9Halo = halo(0xfbbf24, 1.0, 1.6, -0.66, 0);
 
-function wing(side) {
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.9), wingMat);
-  m.rotation.order = 'YXZ';
-  m.rotation.x = -Math.PI / 2;
-  m.rotation.y = side * 0.12;
-  m.position.set(-0.25, 0.56, side * 0.42);
-  fly.add(m);
+const WING_LEN = 1.9;
+const WING_ROOT = [0.3, 0.55, 0];
+
+function wingPoint(u, v, side) {
+  const width = 0.34 * Math.sin(Math.PI * Math.pow(u, 0.8)) + 0.02;
+  return new THREE.Vector3(
+    WING_ROOT[0] - u * WING_LEN,
+    WING_ROOT[1] + 0.05 * v * v * width * 3 + 0.12 * u * u * u,
+    side * 0.2 + v * width
+  );
 }
-wing(1);
-wing(-1);
+
+function wingMembrane(side) {
+  const NU = 36, NV = 14;
+  const positions = [];
+  for (let i = 0; i <= NU; i++) {
+    for (let j = 0; j <= NV; j++) {
+      const p = wingPoint(i / NU, -1 + 2 * j / NV, side);
+      positions.push(p.x, p.y, p.z);
+    }
+  }
+  const indices = [];
+  for (let i = 0; i < NU; i++) {
+    for (let j = 0; j < NV; j++) {
+      const a = i * (NV + 1) + j, b = a + NV + 1;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, membraneMat);
+  mesh.renderOrder = 2;
+  fly.add(mesh);
+}
+
+function veinTube(points, radius) {
+  const curve = new THREE.CatmullRomCurve3(points);
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, radius, 8), veinMat);
+  mesh.renderOrder = 3;
+  fly.add(mesh);
+}
+
+const longitudinalVeins = [
+  { v: -0.93, r: 0.024 },
+  { v: -0.62, r: 0.017 },
+  { v: -0.32, r: 0.015 },
+  { v: 0.02, r: 0.014 },
+  { v: 0.36, r: 0.013 },
+  { v: 0.7, r: 0.012 }
+];
+const crossVeins = [
+  { u: 0.42, v0: -0.32, v1: 0.02 },
+  { u: 0.56, v0: 0.02, v1: 0.36 },
+  { u: 0.3, v0: -0.62, v1: -0.32 },
+  { u: 0.7, v0: 0.36, v1: 0.7 }
+];
+
+function wingVeins(side) {
+  longitudinalVeins.forEach(({ v, r }) => {
+    const pts = [];
+    for (let k = 0; k <= 12; k++) {
+      const u = k / 12;
+      const p = wingPoint(u, v + 0.1 * u * u, side);
+      p.y += 0.012;
+      pts.push(p);
+    }
+    veinTube(pts, r);
+  });
+  crossVeins.forEach(({ u, v0, v1 }) => {
+    const a = wingPoint(u, v0, side), b = wingPoint(u, v1, side);
+    a.y += 0.01; b.y += 0.01;
+    veinTube([a, b], 0.009);
+  });
+}
+
+[1, -1].forEach(side => {
+  wingMembrane(side);
+  wingVeins(side);
+});
 
 const routes = {
   odor: [antennaCurves[0], antennaCurves[1]],
@@ -527,9 +525,7 @@ function frame() {
   const now = performance.now();
   if (now - lastSpawn > 500 / Math.max(0.3, organs.speed)) {
     lastSpawn = now;
-    const chance = {
-      odor: organs.odor, vision: organs.vision, humidity: organs.humidity, mn9: nMn9
-    };
+    const chance = { odor: organs.odor, vision: organs.vision, humidity: organs.humidity, mn9: nMn9 };
     Object.keys(routes).forEach(k => {
       if (chance[k] > 0.15 && Math.random() < chance[k]) {
         routes[k].forEach(c => spawnPulse(c, routeColor[k], 0.35 + Math.random() * 0.2));
@@ -549,7 +545,6 @@ function frame() {
   }
 
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
 }
 
 function resize() {
@@ -577,7 +572,7 @@ const endDrag = () => { dragging = false; wrap.style.cursor = 'grab'; };
 cv.addEventListener('pointerup', endDrag);
 cv.addEventListener('pointercancel', endDrag);
 
-requestAnimationFrame(frame);
+renderer.setAnimationLoop(frame);
 
 const $ = id => document.getElementById(id);
 const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
