@@ -288,9 +288,9 @@ const eyeTex = canvasTex(256, 256, (g, w, h) => {
 });
 
 const abdomenTex = canvasTex(64, 256, (g, w, h) => {
-  g.fillStyle = '#c0843a';
+  g.fillStyle = '#2b1a0e';
   g.fillRect(0, 0, w, h);
-  g.fillStyle = '#3a2410';
+  g.fillStyle = '#120a05';
   [0.18, 0.34, 0.5, 0.66, 0.82].forEach(b => g.fillRect(0, b * h, w, h * 0.07));
 });
 
@@ -299,8 +299,8 @@ const chitin = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
   sheen: 0.35, sheenColor: new THREE.Color(0xf5c46b), sheenRoughness: 0.45, ...extra
 });
 const bodyMat = chitin(0xffffff, { map: abdomenTex });
-const thoraxMat = chitin(0x9a6a2e);
-const headMat = chitin(0xc08a48);
+const thoraxMat = chitin(0x3a2514);
+const headMat = chitin(0x33200f);
 const eyeMat = new THREE.MeshPhysicalMaterial({
   map: eyeTex, emissiveMap: eyeTex, emissive: 0xff2a2a, emissiveIntensity: 0.15,
   roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08
@@ -312,7 +312,6 @@ const darkMat = chitin(0x2a1a0c);
 const haltereMat = chitin(0xe0b26a);
 const proboscisMat = chitin(0x3b2513);
 const mn9Mat = chitin(0x78350f, { emissive: 0xfbbf24, emissiveIntensity: 0.3 });
-const bristleMat = new THREE.MeshStandardMaterial({ color: 0x0a0705, roughness: 0.35 });
 const veinMat = new THREE.MeshStandardMaterial({ color: 0x5a3414, roughness: 0.5 });
 const membraneMat = new THREE.MeshPhysicalMaterial({
   color: 0xe8c07a, transparent: true, opacity: 0.22, roughness: 0.2, metalness: 0,
@@ -488,36 +487,6 @@ function haltere(side) {
 }
 haltere(1);
 haltere(-1);
-
-const bristles = [];
-let seed = 7;
-const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-function addBristles(body, count, len, keep) {
-  for (let n = 0; n < count;) {
-    const th = Math.acos(2 * rnd() - 1), ph = rnd() * Math.PI * 2;
-    const sx = Math.sin(th) * Math.cos(ph), sy = Math.cos(th), sz = Math.sin(th) * Math.sin(ph);
-    const n3 = new THREE.Vector3(sx / body.s[0], sy / body.s[1], sz / body.s[2]).normalize();
-    if (!keep(sx, sy, sz)) continue;
-    const p = new THREE.Vector3(body.c[0] + body.s[0] * sx, body.c[1] + body.s[1] * sy, body.c[2] + body.s[2] * sz);
-    bristles.push({ p, n: n3, len });
-    n++;
-  }
-}
-addBristles(THORAX, 42, 0.16, (sx, sy) => sy > 0.25);
-addBristles(ABDOMEN, 14, 0.09, (sx, sy) => sy > 0.2);
-addBristles(HEAD, 10, 0.1, (sx, sy, sz) => sy > 0.45 && Math.abs(sz) < 0.25);
-
-const bristleGeo = new THREE.CylinderGeometry(0.004, 0.012, 1, 6).translate(0, 0.5, 0);
-const bristleMesh = new THREE.InstancedMesh(bristleGeo, bristleMat, bristles.length);
-const q = new THREE.Quaternion(), m4 = new THREE.Matrix4(), sc = new THREE.Vector3();
-bristles.forEach((b, i) => {
-  q.setFromUnitVectors(UP, b.n);
-  sc.set(1, b.len, 1);
-  m4.compose(b.p, q, sc);
-  bristleMesh.setMatrixAt(i, m4);
-});
-bristleMesh.instanceMatrix.needsUpdate = true;
-fly.add(bristleMesh);
 
 const routes = {
   odor: [antennaCurves[0], antennaCurves[1]],
