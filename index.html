@@ -4,8 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cyber-Drosophila · Коннектом мухи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
+</script>
 <style>
   body {
     background: radial-gradient(ellipse at top, #0f1a2e 0%, #05070d 70%);
@@ -20,8 +26,33 @@
     backdrop-filter: blur(6px);
     border-radius: 14px;
   }
-  .neon-title {
-    text-shadow: 0 0 8px #22d3ee, 0 0 22px rgba(34, 211, 238, 0.6);
+  .game-title {
+    font-family: 'Orbitron', ui-monospace, monospace;
+    font-weight: 900;
+    font-size: clamp(2.4rem, 7vw, 5rem);
+    letter-spacing: .08em;
+    line-height: 1.05;
+    color: #e0faff;
+    text-shadow:
+      0 0 2px #fff,
+      0 0 8px #22d3ee,
+      0 0 18px #22d3ee,
+      0 0 36px rgba(8, 145, 178, .9),
+      0 0 64px rgba(8, 145, 178, .6);
+    animation: flicker 6s infinite;
+  }
+  .game-title .hot { color: #f0abfc; text-shadow: 0 0 2px #fff, 0 0 8px #e879f9, 0 0 18px #d946ef, 0 0 36px rgba(217,70,239,.8); }
+  .neon-bar {
+    height: 2px; margin: 14px auto 0; width: min(520px, 80%);
+    background: linear-gradient(90deg, transparent, #22d3ee, #e879f9, transparent);
+    box-shadow: 0 0 10px #22d3ee, 0 0 14px #e879f9;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: .82; }
+    94% { opacity: 1; }
+    97% { opacity: .9; }
   }
   .scanline::after {
     content: "";
@@ -36,12 +67,6 @@
   input[type=range]::-moz-range-thumb {
     width: 18px; height: 18px; border-radius: 50%; background: #0b1222; border: 2px solid currentColor; box-shadow: 0 0 10px currentColor;
   }
-  .glow-halo { transition: opacity .4s ease; }
-  .pulse-inner { animation: pulse var(--dur, 2s) ease-in-out infinite; }
-  @keyframes pulse {
-    0%, 100% { opacity: .35; }
-    50% { opacity: 1; }
-  }
   .verdict-up { text-shadow: 0 0 12px #4ade80; }
   .verdict-down { text-shadow: 0 0 12px #f87171; }
   .btn-run {
@@ -53,26 +78,26 @@
   .btn-run:active { transform: translateY(0) scale(.98); }
   .btn-run:disabled { opacity: .6; cursor: wait; }
   .tab-active { background: rgba(34, 211, 238, .15); color: #67e8f9; box-shadow: 0 0 12px rgba(34, 211, 238, .35); }
+  #fly3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
 </style>
 </head>
 <body class="p-4 md:p-6">
 
 <header class="mb-6 text-center">
-  <p class="text-xs tracking-[0.4em] text-cyan-400/70">BIO-LAB // CONNECTOME ENGINE v0.1</p>
-  <h1 class="neon-title text-3xl md:text-4xl font-bold text-cyan-300 mt-2">CYBER-DROSOPHILA</h1>
-  <p class="text-sm text-slate-400 mt-1">Прогнозирование временных рядов коннектомом мухи</p>
+  <h1 class="game-title">CYBER<span class="hot">-</span>DROSOPHILA</h1>
+  <div class="neon-bar"></div>
+  <p class="text-sm text-slate-400 mt-3">Прогнозирование временных рядов коннектомом мухи</p>
 </header>
 
 <div class="flex justify-center mb-6">
   <div class="inline-flex rounded-full border border-cyan-500/30 p-1 bg-slate-900/70">
-    <button id="tab-weather" class="tab-active px-5 py-2 rounded-full text-sm transition">Погода</button>
+    <button id="tab-weather" class="tab-active px-5 py-2 rounded-full text-sm transition">Погода · Ухта</button>
     <button id="tab-finance" class="px-5 py-2 rounded-full text-sm text-slate-400 transition">Финансовый рынок</button>
   </div>
 </div>
 
 <main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-  <!-- Левая панель: пульт -->
   <section class="panel scanline relative p-5 xl:col-span-3 space-y-6">
     <h2 class="text-sm tracking-widest text-cyan-300">ПУЛЬТ СТИМУЛЯЦИИ РЕЦЕПТОРОВ</h2>
 
@@ -105,116 +130,30 @@
       <p class="text-2xl font-bold text-amber-300 tabular-nums" id="mn9-live">0 Гц</p>
     </div>
 
+    <div class="rounded-lg border border-cyan-400/30 p-3 bg-cyan-400/5">
+      <p id="live-label" class="text-xs text-cyan-300/80">Сейчас в Ухте</p>
+      <p class="text-2xl font-bold text-cyan-300 tabular-nums" id="live-value">—</p>
+    </div>
+
     <button id="run" class="btn-run w-full py-4 rounded-xl text-white font-bold tracking-wide">
       ▶ Запустить симуляцию мозга
     </button>
   </section>
 
-  <!-- Центр: муха -->
   <section class="panel relative p-5 xl:col-span-5 flex flex-col">
-    <h2 class="text-sm tracking-widest text-cyan-300 mb-2">КОННЕКТОМ // СХЕМА МУХИ</h2>
-    <svg id="fly" viewBox="0 0 600 480" class="w-full h-auto max-h-[560px]">
-      <defs>
-        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="6"/>
-        </filter>
-        <filter id="blurSm" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5"/>
-        </filter>
-        <radialGradient id="eyeGrad" cx="35%" cy="35%" r="70%">
-          <stop offset="0%" stop-color="#e0f7ff"/>
-          <stop offset="40%" stop-color="#22d3ee"/>
-          <stop offset="100%" stop-color="#0e7490"/>
-        </radialGradient>
-        <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#1e293b"/>
-          <stop offset="50%" stop-color="#334155"/>
-          <stop offset="100%" stop-color="#1e293b"/>
-        </linearGradient>
-        <path id="pathAntL" d="M285 92 Q262 60 246 36"/>
-        <path id="pathAntR" d="M315 92 Q338 60 354 36"/>
-        <path id="pathBrain" d="M300 116 L300 150"/>
-        <path id="pathProb" d="M300 160 L300 190"/>
-      </defs>
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm tracking-widest text-cyan-300">КОННЕКТОМ // 3D-МУХА</h2>
+      <span class="text-xs text-slate-500">тяни мышью, чтобы повернуть</span>
+    </div>
+    <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] cursor-grab"></div>
 
-      <!-- Крылья -->
-      <ellipse cx="222" cy="250" rx="58" ry="100" transform="rotate(-14 222 250)" fill="rgba(125,211,252,0.08)" stroke="rgba(125,211,252,0.35)"/>
-      <ellipse cx="378" cy="250" rx="58" ry="100" transform="rotate(14 378 250)" fill="rgba(125,211,252,0.08)" stroke="rgba(125,211,252,0.35)"/>
-
-      <!-- Лапки -->
-      <g id="legs" stroke="#64748b" stroke-width="5" fill="none" stroke-linecap="round">
-        <path d="M262 200 L170 160 L140 120"/>
-        <path d="M258 240 L140 230 L110 270"/>
-        <path d="M262 280 L170 340 L150 390"/>
-        <path d="M338 200 L430 160 L460 120"/>
-        <path d="M342 240 L460 230 L490 270"/>
-        <path d="M338 280 L430 340 L450 390"/>
-      </g>
-      <g id="legsGlow" stroke="#a3e635" stroke-width="10" fill="none" stroke-linecap="round" opacity="0" filter="url(#blur)">
-        <path d="M262 200 L170 160 L140 120"/>
-        <path d="M258 240 L140 230 L110 270"/>
-        <path d="M262 280 L170 340 L150 390"/>
-        <path d="M338 200 L430 160 L460 120"/>
-        <path d="M342 240 L460 230 L490 270"/>
-        <path d="M338 280 L430 340 L450 390"/>
-      </g>
-
-      <!-- Брюшко и грудь -->
-      <ellipse cx="300" cy="365" rx="42" ry="82" fill="url(#bodyGrad)" stroke="#475569"/>
-      <ellipse cx="300" cy="235" rx="55" ry="62" fill="url(#bodyGrad)" stroke="#475569"/>
-
-      <!-- Голова -->
-      <circle cx="300" cy="120" r="42" fill="#1e293b" stroke="#475569"/>
-
-      <!-- Глаза -->
-      <g id="eyes">
-        <ellipse cx="256" cy="115" rx="24" ry="30" fill="url(#eyeGrad)" opacity="0.35" id="eyeL"/>
-        <ellipse cx="344" cy="115" rx="24" ry="30" fill="url(#eyeGrad)" opacity="0.35" id="eyeR"/>
-      </g>
-      <ellipse id="eyesHalo" cx="300" cy="115" rx="110" ry="40" fill="#22d3ee" opacity="0" filter="url(#blur)"/>
-
-      <!-- Усики -->
-      <g id="antennae" fill="none" stroke="#e879f9" stroke-linecap="round">
-        <use href="#pathAntL" stroke-width="3"/>
-        <use href="#pathAntR" stroke-width="3"/>
-      </g>
-      <g id="antennaeGlow" fill="none" stroke="#e879f9" stroke-width="12" stroke-linecap="round" opacity="0" filter="url(#blur)">
-        <g class="pulse-inner">
-          <use href="#pathAntL"/>
-          <use href="#pathAntR"/>
-        </g>
-      </g>
-      <circle cx="246" cy="36" r="4" fill="#f5d0fe"/>
-      <circle cx="354" cy="36" r="4" fill="#f5d0fe"/>
-
-      <!-- Грибовидное тело -->
-      <g id="brain">
-        <circle cx="300" cy="112" r="20" fill="#a3e635" opacity="0"/>
-        <ellipse cx="300" cy="104" rx="13" ry="8" fill="#365314" stroke="#a3e635" stroke-width="1.5"/>
-        <rect x="297" y="104" width="6" height="16" fill="#365314" stroke="#a3e635" stroke-width="1.2"/>
-      </g>
-      <circle id="brainHalo" cx="300" cy="112" r="28" fill="#a3e635" opacity="0" filter="url(#blur)"/>
-
-      <!-- Хоботок MN9 -->
-      <line x1="300" y1="160" x2="300" y2="190" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
-      <circle id="mn9" cx="300" cy="192" r="8" fill="#fbbf24" opacity="0.5"/>
-      <circle id="mn9Halo" cx="300" cy="192" r="18" fill="#fbbf24" opacity="0" filter="url(#blur)"/>
-
-      <!-- Подписи -->
-      <g font-size="12" fill="#94a3b8" font-family="ui-monospace, monospace">
-        <line x1="330" y1="36" x2="420" y2="36" stroke="#e879f9" stroke-opacity=".4" stroke-dasharray="3 3"/>
-        <text x="425" y="40" fill="#f0abfc">Усики (Or56a)</text>
-        <line x1="352" y1="112" x2="470" y2="90" stroke="#22d3ee" stroke-opacity=".4" stroke-dasharray="3 3"/>
-        <text x="475" y="94" fill="#67e8f9">Глаза</text>
-        <line x1="322" y1="110" x2="450" y2="150" stroke="#a3e635" stroke-opacity=".4" stroke-dasharray="3 3"/>
-        <text x="455" y="154" fill="#bef264">Грибовидное тело</text>
-        <line x1="308" y1="192" x2="440" y2="200" stroke="#fbbf24" stroke-opacity=".4" stroke-dasharray="3 3"/>
-        <text x="445" y="204" fill="#fcd34d">MN9 (хоботок)</text>
-        <text x="20" y="470" fill="#64748b">Лапки: моторный выход</text>
-      </g>
-
-      <g id="impulses"></g>
-    </svg>
+    <div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+      <span class="text-cyan-300">● Глаза</span>
+      <span class="text-fuchsia-300">● Усики (Or56a)</span>
+      <span class="text-lime-300">● Грибовидное тело</span>
+      <span class="text-amber-300">● MN9 (хоботок)</span>
+      <span class="text-lime-200/70">● Лапки</span>
+    </div>
 
     <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
       <div class="rounded-lg bg-cyan-400/5 border border-cyan-400/20 p-2"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums">0</div></div>
@@ -223,12 +162,11 @@
     </div>
   </section>
 
-  <!-- Правая часть: график и вердикт -->
   <section class="xl:col-span-4 space-y-6">
     <div class="panel p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm tracking-widest text-cyan-300">ГРАФИК ПРОГНОЗА</h2>
-        <span id="chart-mode" class="text-xs text-slate-500">Погода, °C</span>
+        <span id="chart-mode" class="text-xs text-slate-500 text-right"></span>
       </div>
       <div class="relative h-64">
         <canvas id="chart"></canvas>
@@ -237,9 +175,7 @@
 
     <div class="panel p-5">
       <h2 class="text-sm tracking-widest text-cyan-300 mb-3">ВЕРДИКТ МУХИ</h2>
-      <p id="verdict" class="text-base leading-relaxed text-slate-200">
-        Нажми «Запустить симуляцию мозга», чтобы получить прогноз.
-      </p>
+      <p id="verdict" class="text-base leading-relaxed text-slate-200">Загружаю данные…</p>
     </div>
 
     <div class="panel p-5">
@@ -266,225 +202,612 @@
   </section>
 </main>
 
-<footer class="text-center text-xs text-slate-600 mt-8">Тестовые данные: случайная генерация, без реальных измерений.</footer>
+<footer class="text-center text-xs text-slate-600 mt-8 space-y-1">
+  <p>Погода: Open-Meteo, Ухта (факт за 2 дня и прогноз на 4 дня). Курс USD/RUB: fawazahmed0/currency-api.</p>
+  <p>Прогноз мухи — демонстрационная модель, а не финансовая или метеорологическая рекомендация.</p>
+</footer>
 
-<script>
-  const COLORS = { vision: '#22d3ee', odor: '#e879f9', humidity: '#a3e635', mn9: '#fbbf24' };
-  const N = 60;
-  const SPLIT = 40;
-  const MODES = {
-    weather: {
-      labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
-      chart: 'Погода, °C',
-      base: 15, step: 0.8, unit: '°C', start: 14, decimals: 1
-    },
-    finance: {
-      labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
-      chart: 'Финансовый рынок, USD',
-      base: 42000, step: 650, unit: '$', start: 42000, decimals: 0
+<script type="module">
+import * as THREE from 'three';
+
+const wrap = document.getElementById('fly3d');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+wrap.appendChild(renderer.domElement);
+const cv = renderer.domElement;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+camera.position.set(0, 1.3, 8.4);
+camera.lookAt(0.05, -0.05, 0);
+
+scene.add(new THREE.HemisphereLight(0x67e8f9, 0x1e1b4b, 1.0));
+const key = new THREE.DirectionalLight(0xffffff, 1.8);
+key.position.set(3, 5, 4);
+scene.add(key);
+const rim = new THREE.PointLight(0xe879f9, 8, 16);
+rim.position.set(-3, 2, -3);
+scene.add(rim);
+
+const fly = new THREE.Group();
+scene.add(fly);
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const haloTex = canvasTex(128, 128, (g) => {
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.3, 'rgba(255,255,255,0.4)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 128, 128);
+});
+
+function halo(color, size, x, y, z) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: haloTex, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0
+  }));
+  s.scale.setScalar(size);
+  s.position.set(x, y, z);
+  fly.add(s);
+  return s;
+}
+
+function hexPath(g, x, y, r) {
+  g.beginPath();
+  for (let k = 0; k < 6; k++) {
+    const a = Math.PI / 3 * k + Math.PI / 6;
+    g[k ? 'lineTo' : 'moveTo'](x + r * Math.cos(a), y + r * Math.sin(a));
+  }
+  g.closePath();
+  g.stroke();
+}
+
+const eyeTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#0e7490';
+  g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(224,247,255,0.85)';
+  g.lineWidth = 3;
+  const r = 14;
+  for (let row = -1; row * r * 1.5 < h + r; row++) {
+    for (let col = -1; col * r * 1.73 < w + r; col++) {
+      hexPath(g, col * r * 1.73 + (row % 2 ? r * 0.866 : 0), row * r * 1.5, r - 2);
     }
+  }
+});
+
+const abdomenTex = canvasTex(64, 256, (g, w, h) => {
+  g.fillStyle = '#9a7433';
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = '#1c1408';
+  [0.2, 0.36, 0.52, 0.68, 0.84].forEach(b => g.fillRect(0, b * h, w, h * 0.09));
+  g.fillStyle = 'rgba(255,240,200,0.15)';
+  for (let y = 0; y < h; y += 6) g.fillRect(0, y, w, 1);
+});
+
+const wingTex = canvasTex(1024, 420, (g, w, h) => {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const bez = (p0, p1, p2, t) => {
+    const u = 1 - t;
+    return [u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]];
   };
-  let mode = 'weather';
+  g.beginPath();
+  g.ellipse(w * 0.5, h * 0.5, w * 0.48, h * 0.46, 0, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(125,211,252,0.28)';
+  g.fill();
+  g.save();
+  g.clip();
 
-  const sliders = { vision: $('vision'), odor: $('odor'), humidity: $('humidity') };
-  function $(id) { return document.getElementById(id); }
-
-  const ctx = $('chart').getContext('2d');
-  const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: Array.from({ length: N }, (_, i) => i + 1),
-      datasets: [
-        { label: 'Реальность', data: [], borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,.1)', borderWidth: 2, pointRadius: 0, tension: .35, fill: false },
-        { label: 'Прогноз Мухи', data: [], borderColor: '#e879f9', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, tension: .35, fill: false }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: { duration: 700 },
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace' } } } },
-      scales: {
-        x: { ticks: { color: '#64748b', maxTicksLimit: 8 }, grid: { color: 'rgba(148,163,184,.08)' } },
-        y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.08)' } }
-      }
-    }
+  const veins = [];
+  for (let k = 0; k < 7; k++) {
+    const y0 = h * (0.16 + k * 0.1) + rnd() * 6;
+    const y1 = h * (0.1 + k * 0.13) + (rnd() - 0.5) * h * 0.06;
+    veins.push([[w * 1.0, y0], [w * 0.5, (y0 + y1) / 2 + (rnd() - 0.5) * h * 0.1], [w * 0.0, y1]]);
+  }
+  veins.forEach((v, k) => {
+    g.beginPath();
+    g.moveTo(...v[0]);
+    g.quadraticCurveTo(v[1][0], v[1][1], v[2][0], v[2][1]);
+    g.strokeStyle = `rgba(186,230,253,${0.5 + rnd() * 0.3})`;
+    g.lineWidth = k === 0 || k === 3 ? 4 : 2.5;
+    g.stroke();
   });
+  for (let k = 0; k < veins.length - 1; k++) {
+    for (let t = 0.12; t < 0.95; t += 0.14) {
+      if (rnd() < 0.55) continue;
+      const a = bez(...veins[k], t);
+      const b = bez(...veins[k + 1], t + 0.04 + rnd() * 0.04);
+      g.beginPath();
+      g.moveTo(...a);
+      g.lineTo(...b);
+      g.strokeStyle = 'rgba(186,230,253,0.35)';
+      g.lineWidth = 1.5;
+      g.stroke();
+    }
+  }
+  for (let i = 0; i < 80; i++) {
+    g.beginPath();
+    g.arc(rnd() * w, rnd() * h, 1 + rnd() * 1.5, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(186,230,253,0.35)';
+    g.fill();
+  }
+  g.restore();
 
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-  function fmtVal(v) { return v.toLocaleString('ru-RU', { maximumFractionDigits: MODES[mode].decimals, minimumFractionDigits: MODES[mode].decimals }); }
+  g.beginPath();
+  g.ellipse(w * 0.5, h * 0.5, w * 0.48, h * 0.46, 0, 0, Math.PI * 2);
+  g.strokeStyle = 'rgba(186,230,253,0.85)';
+  g.lineWidth = 4;
+  g.stroke();
+});
 
-  function readSliders() {
-    return {
-      vision: +sliders.vision.value / 200,
-      odor: +sliders.odor.value / 200,
-      humidity: +sliders.humidity.value / 200
+const bodyMat = new THREE.MeshStandardMaterial({ map: abdomenTex, roughness: 0.5, metalness: 0.2 });
+const thoraxMat = new THREE.MeshStandardMaterial({ color: 0x6b4f1d, roughness: 0.45, metalness: 0.25 });
+const headMat = new THREE.MeshStandardMaterial({ color: 0xa8843f, roughness: 0.4, metalness: 0.2 });
+const eyeMat = new THREE.MeshStandardMaterial({
+  map: eyeTex, emissiveMap: eyeTex, emissive: 0x22d3ee, emissiveIntensity: 0.2, roughness: 0.25, metalness: 0.1
+});
+const antennaMat = new THREE.MeshStandardMaterial({ color: 0x4a1d5c, emissive: 0xe879f9, emissiveIntensity: 0.2, roughness: 0.4 });
+const ringMat = new THREE.MeshStandardMaterial({ color: 0x365314, emissive: 0xa3e635, emissiveIntensity: 0.2, roughness: 0.4 });
+const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, emissive: 0xa3e635, emissiveIntensity: 0, roughness: 0.5 });
+const proboscisMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 });
+const mn9Mat = new THREE.MeshStandardMaterial({ color: 0x78350f, emissive: 0xfbbf24, emissiveIntensity: 0.3, roughness: 0.3 });
+const wingMat = new THREE.MeshStandardMaterial({
+  map: wingTex, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide, roughness: 0.2, metalness: 0
+});
+
+function ellipsoid(mat, [x, y, z], [ax, ay, az]) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 40), mat);
+  m.rotation.z = Math.PI / 2;
+  m.scale.set(ay, ax, az);
+  m.position.set(x, y, z);
+  fly.add(m);
+  return m;
+}
+
+ellipsoid(bodyMat, [-0.95, -0.05, 0], [0.95, 0.5, 0.46]);
+ellipsoid(thoraxMat, [0.1, 0.12, 0], [0.5, 0.42, 0.44]);
+ellipsoid(headMat, [1.02, 0.12, 0], [0.36, 0.36, 0.36]);
+
+const eyeL = ellipsoid(eyeMat, [1.14, 0.2, 0.3], [0.26, 0.28, 0.22]);
+const eyeR = ellipsoid(eyeMat, [1.14, 0.2, -0.3], [0.26, 0.28, 0.22]);
+const eyesHalo = halo(0x22d3ee, 2.6, 1.2, 0.2, 0);
+
+const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.035, 16, 48), ringMat);
+ring.rotation.y = Math.PI / 2;
+ring.position.set(1.37, 0.1, 0);
+fly.add(ring);
+const brainHalo = halo(0xa3e635, 1.1, 1.42, 0.1, 0);
+
+const legAttach = [[0.42, -0.25], [0.1, -0.25], [-0.22, -0.25]];
+const legDefs = [];
+[1, -1].forEach(side => legAttach.forEach(([x, y]) => {
+  legDefs.push(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(x, y, side * 0.3),
+    new THREE.Vector3(x + 0.12, -0.62, side * 0.62),
+    new THREE.Vector3(x + 0.08, -0.6, side * 1.0),
+    new THREE.Vector3(x + 0.22, -0.95, side * 1.22)
+  ]));
+}));
+legDefs.forEach(c => fly.add(new THREE.Mesh(new THREE.TubeGeometry(c, 40, 0.035, 8), legMat)));
+
+function antennaCurve(side) {
+  return new THREE.CatmullRomCurve3([
+    new THREE.Vector3(1.22, 0.45, side * 0.1),
+    new THREE.Vector3(1.36, 0.72, side * 0.2),
+    new THREE.Vector3(1.56, 0.9, side * 0.28)
+  ]);
+}
+const antennaCurves = [antennaCurve(1), antennaCurve(-1)];
+antennaCurves.forEach(c => {
+  fly.add(new THREE.Mesh(new THREE.TubeGeometry(c, 32, 0.028, 8), antennaMat));
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), antennaMat);
+  tip.position.copy(c.getPoint(1));
+  fly.add(tip);
+});
+const antennaHalo = halo(0xe879f9, 1.3, 1.42, 0.68, 0);
+
+const proboscisCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(1.22, -0.12, 0),
+  new THREE.Vector3(1.4, -0.3, 0),
+  new THREE.Vector3(1.52, -0.5, 0),
+  new THREE.Vector3(1.6, -0.66, 0)
+]);
+fly.add(new THREE.Mesh(new THREE.TubeGeometry(proboscisCurve, 32, 0.03, 8), proboscisMat));
+const mn9Tip = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 16), mn9Mat);
+mn9Tip.position.copy(proboscisCurve.getPoint(1));
+fly.add(mn9Tip);
+const mn9Halo = halo(0xfbbf24, 1.0, 1.6, -0.66, 0);
+
+function wing(side) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.9), wingMat);
+  m.rotation.order = 'YXZ';
+  m.rotation.x = -Math.PI / 2;
+  m.rotation.y = side * 0.12;
+  m.position.set(-0.25, 0.56, side * 0.42);
+  fly.add(m);
+}
+wing(1);
+wing(-1);
+
+const routes = {
+  odor: [antennaCurves[0], antennaCurves[1]],
+  vision: [new THREE.CatmullRomCurve3([
+    new THREE.Vector3(1.14, 0.2, 0.3), new THREE.Vector3(1.28, 0.16, 0.16), new THREE.Vector3(1.37, 0.1, 0.02)
+  ]), new THREE.CatmullRomCurve3([
+    new THREE.Vector3(1.14, 0.2, -0.3), new THREE.Vector3(1.28, 0.16, -0.16), new THREE.Vector3(1.37, 0.1, -0.02)
+  ])],
+  humidity: [new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.1, 0.5, 0), new THREE.Vector3(0.6, 0.72, 0), new THREE.Vector3(1.0, 0.5, 0), new THREE.Vector3(1.37, 0.1, 0)
+  ])],
+  mn9: [proboscisCurve]
+};
+const routeColor = { odor: 0xe879f9, vision: 0x22d3ee, humidity: 0xa3e635, mn9: 0xfbbf24 };
+
+const pulseGeo = new THREE.SphereGeometry(0.045, 12, 10);
+const pulses = [];
+function spawnPulse(curve, color, speed) {
+  const m = new THREE.Mesh(pulseGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+  fly.add(m);
+  pulses.push({ m, curve, t: 0, speed });
+}
+
+const organs = { vision: 0, odor: 0, humidity: 0, mn9: 0, speed: 1 };
+
+let rotCur = 0, rotTarget = 0, dragging = false, lastX = 0, lastSpawn = 0;
+
+function frame() {
+  const t = performance.now() / 1000;
+  const beat = f => 0.78 + 0.22 * Math.sin(t * f);
+  const nMn9 = organs.mn9;
+
+  rotCur += (rotTarget - rotCur) * 0.18;
+  fly.rotation.y = rotCur;
+
+  const vb = organs.vision * beat(1.2 + 2 * organs.vision);
+  eyeMat.emissiveIntensity = 0.2 + 2.2 * vb;
+  eyesHalo.material.opacity = 0.55 * vb;
+
+  const ob = organs.odor * beat(1.5 + 3 * organs.odor);
+  antennaMat.emissiveIntensity = 0.2 + 2 * ob;
+  antennaHalo.material.opacity = 0.9 * ob;
+
+  const hb = organs.humidity * beat(1 + 2 * organs.humidity);
+  ringMat.emissiveIntensity = 0.2 + 2.2 * hb;
+  brainHalo.material.opacity = 0.85 * hb;
+
+  const mb = nMn9 * beat(2 + 4 * nMn9);
+  legMat.emissiveIntensity = 1.8 * mb;
+  mn9Mat.emissiveIntensity = 0.3 + 2.5 * mb;
+  mn9Halo.material.opacity = 0.95 * mb;
+
+  const now = performance.now();
+  if (now - lastSpawn > 500 / Math.max(0.3, organs.speed)) {
+    lastSpawn = now;
+    const chance = {
+      odor: organs.odor, vision: organs.vision, humidity: organs.humidity, mn9: nMn9
     };
-  }
-
-  function mn9Rate(s) {
-    const raw = 200 * (0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity) + rnd(-12, 12);
-    return Math.max(0, Math.min(200, raw));
-  }
-
-  function renderOrgans() {
-    const s = readSliders();
-    const hz = { vision: s.vision * 200, odor: s.odor * 200, humidity: s.humidity * 200 };
-    $('val-vision').textContent = Math.round(hz.vision) + ' Гц';
-    $('val-odor').textContent = Math.round(hz.odor) + ' Гц';
-    $('val-humidity').textContent = Math.round(hz.humidity) + ' Гц';
-    $('stat-vision').textContent = Math.round(hz.vision);
-    $('stat-odor').textContent = Math.round(hz.odor);
-    $('stat-humidity').textContent = Math.round(hz.humidity);
-
-    const mn9 = Math.round(mn9Rate(s));
-    $('mn9-live').textContent = mn9 + ' Гц';
-
-    ['eyeL', 'eyeR'].forEach(id => $(id).setAttribute('opacity', (0.25 + 0.75 * s.vision).toFixed(3)));
-    $('eyesHalo').setAttribute('opacity', (0.5 * s.vision).toFixed(3));
-    $('antennae').querySelectorAll('use').forEach(u => u.setAttribute('stroke-width', (2 + 4 * s.odor).toFixed(2)));
-    $('antennaeGlow').setAttribute('opacity', (0.9 * s.odor).toFixed(3));
-    $('brainHalo').setAttribute('opacity', (0.75 * s.humidity).toFixed(3));
-    $('brain').querySelector('circle').setAttribute('opacity', (0.3 * s.humidity).toFixed(3));
-    $('mn9').setAttribute('opacity', (0.4 + 0.6 * mn9 / 200).toFixed(3));
-    $('mn9Halo').setAttribute('opacity', (mn9 / 200).toFixed(3));
-    $('legsGlow').setAttribute('opacity', (mn9 / 200 * 0.9).toFixed(3));
-    pulseSpeed = 0.6 + 2.4 * ((s.vision + s.odor + s.humidity) / 3);
-    $('antennaeGlow').querySelector('.pulse-inner').style.setProperty('--dur', (2.4 - 1.8 * s.odor).toFixed(2) + 's');
-  }
-
-  let pulseSpeed = 1;
-  const impulseGroup = $('impulses');
-  const pulses = [];
-  const routes = [
-    { key: 'odor', paths: ['pathAntL', 'pathAntR'], color: COLORS.odor, weight: s => s.odor },
-    { key: 'vision', paths: [], color: COLORS.vision, weight: s => s.vision },
-    { key: 'humidity', paths: ['pathBrain'], color: COLORS.humidity, weight: s => s.humidity },
-    { key: 'mn9', paths: ['pathProb'], color: COLORS.mn9, weight: s => mn9Rate(s) / 200 }
-  ];
-
-  function spawnPulse(pathId, color) {
-    const src = document.getElementById(pathId);
-    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('r', '4');
-    c.setAttribute('fill', color);
-    c.setAttribute('filter', 'url(#blurSm)');
-    impulseGroup.appendChild(c);
-    pulses.push({ el: c, path: src, t: 0, speed: 0.35 + Math.random() * 0.2 });
-  }
-
-  let lastSpawn = 0;
-  function tick(now) {
-    const s = readSliders();
-    if (now - lastSpawn > 500) {
-      lastSpawn = now;
-      routes.forEach(r => {
-        const w = r.weight(s);
-        if (w > 0.15 && Math.random() < w) {
-          r.paths.forEach(p => spawnPulse(p, r.color));
-        }
-      });
-    }
-    for (let i = pulses.length - 1; i >= 0; i--) {
-      const p = pulses[i];
-      p.t += 0.016 * p.speed * pulseSpeed;
-      if (p.t >= 1) { p.el.remove(); pulses.splice(i, 1); continue; }
-      const len = p.path.getTotalLength();
-      const pt = p.path.getPointAtLength(p.t * len);
-      p.el.setAttribute('cx', pt.x);
-      p.el.setAttribute('cy', pt.y);
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function generate() {
-    const cfg = MODES[mode];
-    const truth = [];
-    let v = cfg.start;
-    for (let i = 0; i < N; i++) {
-      v += rnd(-1, 1) * cfg.step + Math.sin(i / 6) * cfg.step * 0.6;
-      truth.push(v);
-    }
-    const s = readSliders();
-    const fidelity = Math.max(0.05, 0.4 + 0.5 * (s.vision * 0.4 + s.odor * 0.35 + s.humidity * 0.25));
-    const pred = truth.map((x, i) => {
-      const sigma = i < SPLIT ? cfg.step * 0.2 : cfg.step * (1.6 - fidelity);
-      return x + rnd(-1, 1) * sigma;
-    });
-    return { truth, pred };
-  }
-
-  function runSimulation() {
-    const btn = $('run');
-    btn.disabled = true;
-    btn.textContent = '⏳ Симуляция...';
-    setTimeout(() => {
-      const { truth, pred } = generate();
-      const s = readSliders();
-      const mn9 = Math.round(mn9Rate(s));
-
-      chart.data.datasets[0].data = truth;
-      chart.data.datasets[1].data = pred.map((x, i) => (i < SPLIT ? null : x));
-      chart.data.datasets[0].label = 'Реальность';
-      chart.update();
-
-      const future = truth.slice(SPLIT);
-      const futurePred = pred.slice(SPLIT);
-      const errs = future.map((x, i) => Math.abs(x - futurePred[i]));
-      const mae = errs.reduce((a, b) => a + b, 0) / errs.length;
-      const meanAbs = future.reduce((a, b) => a + Math.abs(b), 0) / future.length;
-      const acc = Math.max(0, 100 - (mae / meanAbs) * 100);
-
-      let correct = 0;
-      for (let i = 1; i < future.length; i++) {
-        const dTrue = future[i] - future[i - 1];
-        const dPred = futurePred[i] - futurePred[i - 1];
-        if (Math.sign(dTrue) === Math.sign(dPred)) correct++;
+    Object.keys(routes).forEach(k => {
+      if (chance[k] > 0.15 && Math.random() < chance[k]) {
+        routes[k].forEach(c => spawnPulse(c, routeColor[k], 0.35 + Math.random() * 0.2));
       }
-      const dir = (correct / (future.length - 1)) * 100;
-
-      const last = pred[N - 1];
-      const base = pred[SPLIT - 1];
-      const up = last > base;
-      const proboscis = mn9 > 120 ? 'вытянула хоботок' : 'втянула хоботок';
-      $('verdict').innerHTML =
-        `Активность нейрона MN9: <span class="text-amber-300">${mn9} Гц</span> ->  Муха ${proboscis} -> ` +
-        `ПРОГНОЗ: <span class="${up ? 'verdict-up text-lime-300' : 'verdict-down text-red-400'} font-bold">` +
-        (up ? 'БУДЕТ РОСТ 📈' : 'БУДЕТ СПАД 📉') + `</span>`;
-
-      $('m-acc').textContent = acc.toFixed(1) + '%';
-      $('m-dir').textContent = dir.toFixed(0) + '%';
-      $('m-mae').textContent = fmtVal(mae);
-      $('m-mn9').textContent = mn9 + ' Гц';
-
-      btn.disabled = false;
-      btn.textContent = '▶ Запустить симуляцию мозга';
-    }, 350);
+    });
+  }
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.t += 0.016 * p.speed * organs.speed;
+    if (p.t >= 1) {
+      fly.remove(p.m);
+      p.m.material.dispose();
+      pulses.splice(i, 1);
+      continue;
+    }
+    p.m.position.copy(p.curve.getPointAt(p.t));
   }
 
-  function setMode(m) {
-    mode = m;
-    const cfg = MODES[m];
-    $('tab-weather').classList.toggle('tab-active', m === 'weather');
-    $('tab-weather').classList.toggle('text-slate-400', m !== 'weather');
-    $('tab-finance').classList.toggle('tab-active', m === 'finance');
-    $('tab-finance').classList.toggle('text-slate-400', m !== 'finance');
-    $('chart-mode').textContent = cfg.chart;
-    $('label-vision').textContent = cfg.labels[0];
-    $('label-odor').textContent = cfg.labels[1];
-    $('label-humidity').textContent = cfg.labels[2];
-    chart.data.datasets[0].data = [];
-    chart.data.datasets[1].data = [];
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(wrap);
+resize();
+
+cv.addEventListener('pointerdown', e => {
+  dragging = true;
+  lastX = e.clientX;
+  cv.setPointerCapture(e.pointerId);
+  wrap.style.cursor = 'grabbing';
+});
+cv.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  rotTarget += (e.clientX - lastX) * 0.01;
+  lastX = e.clientX;
+});
+const endDrag = () => { dragging = false; wrap.style.cursor = 'grab'; };
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+
+requestAnimationFrame(frame);
+
+const $ = id => document.getElementById(id);
+const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+const TTL = 10 * 60e3;
+const UKHTA = { lat: 63.5667, lon: 53.6833 };
+const CFG = {
+  weather: {
+    labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+    chart: 'Погода, Ухта, °C · сплошная — факт, пунктир — прогноз Open-Meteo',
+    live: 'Сейчас в Ухте', unit: ' °C', decimals: 1,
+    horizon: 'Горизонт: 4 дня вперёд от текущего момента.'
+  },
+  finance: {
+    labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+    chart: 'USD/RUB, ₽ · 30 дней, последние 10 дней — бэктест модели',
+    live: 'USD/RUB сейчас', unit: ' ₽', decimals: 2,
+    horizon: 'Бэктест: прогноз последних 10 дней, сравнённый с реальным курсом.'
+  }
+};
+
+let mode = 'weather';
+let curSplit = 0;
+let drawnData = null;
+const cache = {};
+
+const sliders = { vision: $('vision'), odor: $('odor'), humidity: $('humidity') };
+
+const chart = new Chart($('chart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'Реальность', data: [], borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,.1)',
+        borderWidth: 2, pointRadius: 0, tension: .3, fill: false,
+        segment: { borderDash: ctx => (ctx.p0DataIndex >= curSplit ? [5, 4] : undefined) }
+      },
+      { label: 'Прогноз Мухи', data: [], borderColor: '#e879f9', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, tension: .3, fill: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace' } } } },
+    scales: {
+      x: { ticks: { color: '#64748b', maxTicksLimit: 8, maxRotation: 0 }, grid: { color: 'rgba(148,163,184,.08)' } },
+      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.08)' } }
+    }
+  }
+});
+
+function fmtVal(v, m = mode) {
+  const { decimals } = CFG[m];
+  return v.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function readSliders() {
+  return {
+    vision: +sliders.vision.value / 200,
+    odor: +sliders.odor.value / 200,
+    humidity: +sliders.humidity.value / 200
+  };
+}
+
+function mn9Rate(s) {
+  const raw = 200 * (0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity) + (Math.random() * 24 - 12);
+  return Math.max(0, Math.min(200, raw));
+}
+
+function renderOrgans() {
+  const s = readSliders();
+  $('val-vision').textContent = Math.round(s.vision * 200) + ' Гц';
+  $('val-odor').textContent = Math.round(s.odor * 200) + ' Гц';
+  $('val-humidity').textContent = Math.round(s.humidity * 200) + ' Гц';
+  $('stat-vision').textContent = Math.round(s.vision * 200);
+  $('stat-odor').textContent = Math.round(s.odor * 200);
+  $('stat-humidity').textContent = Math.round(s.humidity * 200);
+  const mn9 = Math.round(mn9Rate(s));
+  $('mn9-live').textContent = mn9 + ' Гц';
+  organs.vision = s.vision;
+  organs.odor = s.odor;
+  organs.humidity = s.humidity;
+  organs.mn9 = mn9 / 200;
+  organs.speed = 0.6 + 2.4 * ((s.vision + s.odor + s.humidity) / 3);
+}
+
+function renderLive() {
+  const d = cache[mode];
+  $('live-label').textContent = CFG[mode].live;
+  $('live-value').textContent = d ? fmtVal(d.current) + CFG[mode].unit : '—';
+}
+
+function drawReality(d) {
+  curSplit = d.split;
+  drawnData = d;
+  chart.data.labels = d.labels;
+  chart.data.datasets[0].data = d.values;
+  chart.data.datasets[1].data = [];
+  chart.update();
+}
+
+async function fetchWeather() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${UKHTA.lat}&longitude=${UKHTA.lon}` +
+    '&hourly=temperature_2m&current=temperature_2m&past_days=2&forecast_days=4&timezone=Europe%2FMoscow';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Open-Meteo ' + r.status);
+  const j = await r.json();
+  const nowIdx = j.hourly.time.indexOf(j.current.time.slice(0, 13) + ':00');
+  const idx = j.hourly.time.map((_, i) => i).filter(i => i % 3 === 0);
+  return {
+    labels: idx.map(i => { const t = j.hourly.time[i]; return `${t.slice(8, 10)}.${t.slice(5, 7)} ${t.slice(11, 16)}`; }),
+    values: idx.map(i => j.hourly.temperature_2m[i]),
+    split: Math.max(1, idx.findIndex(i => i >= nowIdx)),
+    current: j.current.temperature_2m,
+    t: Date.now()
+  };
+}
+
+async function fetchFinance() {
+  const base = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@';
+  const dayTag = off => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - off);
+    return `${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}`;
+  };
+  const toLabel = date => date.slice(5).split('-').reverse().join('.');
+  const offs = Array.from({ length: 29 }, (_, i) => 29 - i);
+  const hist = await Promise.all(offs.map(o =>
+    fetch(`${base}${dayTag(o)}/v1/currencies/usd.json`).then(r => (r.ok ? r.json() : null)).catch(() => null)
+  ));
+  const latest = await (await fetch(`${base}latest/v1/currencies/usd.json`)).json();
+  const pts = hist.filter(Boolean).map(j => ({ label: toLabel(j.date), value: j.usd.rub }));
+  pts.push({ label: toLabel(latest.date), value: latest.usd.rub });
+  return {
+    labels: pts.map(p => p.label),
+    values: pts.map(p => p.value),
+    split: Math.max(1, pts.length - 10),
+    current: latest.usd.rub,
+    t: Date.now()
+  };
+}
+
+async function ensure(m) {
+  const c = cache[m];
+  if (c && Date.now() - c.t < TTL) return c;
+  try {
+    cache[m] = await (m === 'weather' ? fetchWeather() : fetchFinance());
+  } catch (e) {
+    console.warn('Загрузка данных не удалась:', e);
+    return c || null;
+  }
+  return cache[m];
+}
+
+async function refresh(m) {
+  const d = await ensure(m);
+  if (m !== mode) return;
+  renderLive();
+  if (!d) {
+    $('verdict').textContent = 'Не удалось загрузить данные. Попробуйте обновить страницу позже.';
+    return;
+  }
+  if (d !== drawnData) {
+    drawReality(d);
+    $('verdict').textContent = 'Данные обновлены. Нажми «Запустить симуляцию мозга».';
+  }
+}
+
+function predict(truth, split, s) {
+  const fid = 0.3 + 0.6 * (0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity);
+  const steps = truth.slice(1, split).map((x, i) => Math.abs(x - truth[i]));
+  const scale = steps.length ? mean(steps) : 1;
+  const from = Math.max(0, split - 7);
+  const slope = (truth[split - 1] - truth[from]) / Math.max(1, split - 1 - from);
+  const last = truth[split - 1];
+  const pred = new Array(truth.length).fill(null);
+  for (let i = split; i < truth.length; i++) {
+    const h = i - split + 1;
+    pred[i] = last + slope * h * fid + (Math.random() * 2 - 1) * scale * (1 - fid) * Math.sqrt(h);
+  }
+  return pred;
+}
+
+function runSimulation() {
+  const d = cache[mode];
+  if (!d) {
+    $('verdict').textContent = 'Данные ещё не загружены.';
+    return;
+  }
+  const btn = $('run');
+  btn.disabled = true;
+  btn.textContent = '⏳ Симуляция...';
+  setTimeout(() => {
+    const s = readSliders();
+    const mn9 = Math.round(mn9Rate(s));
+    const { values: truth, split } = d;
+    const pred = predict(truth, split, s);
+
+    curSplit = split;
+    chart.data.datasets[1].data = pred;
     chart.update();
+
+    const fut = truth.slice(split);
+    const fp = pred.slice(split);
+    const mae = mean(fut.map((x, i) => Math.abs(x - fp[i])));
+    const spread = (Math.max(...fut) - Math.min(...fut)) || 1;
+    const acc = Math.max(0, 100 - (mae / spread) * 100);
+    let correct = 0;
+    for (let i = 1; i < fut.length; i++) {
+      if (Math.sign(fut[i] - fut[i - 1]) === Math.sign(fp[i] - fp[i - 1])) correct++;
+    }
+    const dir = fut.length > 1 ? (correct / (fut.length - 1)) * 100 : 0;
+
+    const up = pred[pred.length - 1] > truth[split - 1];
+    const proboscis = mn9 > 120 ? 'вытянула хоботок' : 'втянула хоботок';
+    $('verdict').innerHTML =
+      `Активность нейрона MN9: <span class="text-amber-300">${mn9} Гц</span> -> Муха ${proboscis} -> ` +
+      `ПРОГНОЗ: <span class="${up ? 'verdict-up text-lime-300' : 'verdict-down text-red-400'} font-bold">` +
+      (up ? 'БУДЕТ РОСТ 📈' : 'БУДЕТ СПАД 📉') + '</span>' +
+      `<br><span class="text-xs text-slate-500">${CFG[mode].horizon}</span>`;
+
+    $('m-acc').textContent = acc.toFixed(1) + '%';
+    $('m-dir').textContent = dir.toFixed(0) + '%';
+    $('m-mae').textContent = fmtVal(mae) + CFG[mode].unit;
+    $('m-mn9').textContent = mn9 + ' Гц';
+
+    btn.disabled = false;
+    btn.textContent = '▶ Запустить симуляцию мозга';
+  }, 350);
+}
+
+async function setMode(m) {
+  mode = m;
+  const isW = m === 'weather';
+  $('tab-weather').classList.toggle('tab-active', isW);
+  $('tab-weather').classList.toggle('text-slate-400', !isW);
+  $('tab-finance').classList.toggle('tab-active', !isW);
+  $('tab-finance').classList.toggle('text-slate-400', isW);
+  $('chart-mode').textContent = CFG[m].chart;
+  $('label-vision').textContent = CFG[m].labels[0];
+  $('label-odor').textContent = CFG[m].labels[1];
+  $('label-humidity').textContent = CFG[m].labels[2];
+  renderLive();
+  const c = cache[m];
+  if (c) {
+    drawReality(c);
     $('verdict').textContent = 'Режим переключён. Нажми «Запустить симуляцию мозга».';
+  } else {
+    chart.data.labels = [];
+    chart.data.datasets.forEach(ds => (ds.data = []));
+    chart.update();
+    drawnData = null;
+    $('verdict').textContent = 'Загружаю данные…';
   }
+  await refresh(m);
+}
 
-  Object.values(sliders).forEach(el => el.addEventListener('input', renderOrgans));
-  $('run').addEventListener('click', runSimulation);
-  $('tab-weather').addEventListener('click', () => setMode('weather'));
-  $('tab-finance').addEventListener('click', () => setMode('finance'));
+Object.values(sliders).forEach(el => el.addEventListener('input', renderOrgans));
+$('run').addEventListener('click', runSimulation);
+$('tab-weather').addEventListener('click', () => setMode('weather'));
+$('tab-finance').addEventListener('click', () => setMode('finance'));
 
-  renderOrgans();
-  requestAnimationFrame(tick);
+renderOrgans();
+setMode('weather');
+setInterval(() => refresh(mode), 5 * 60e3);
 </script>
 </body>
 </html>
