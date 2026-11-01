@@ -728,12 +728,23 @@ function drawReality(d) {
   chart.update();
 }
 
-async function fetchWeather() {
+async function fetchJson(url, tries = 2) {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      if (i >= tries) throw e;
+      await wait(700 * i);
+    }
+  }
+}
+
+async function fetchOpenMeteo() {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${UKHTA.lat}&longitude=${UKHTA.lon}` +
     '&hourly=temperature_2m&current=temperature_2m&past_days=2&forecast_days=4&timezone=Europe%2FMoscow';
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('Open-Meteo ' + r.status);
-  const j = await r.json();
+  const j = await fetchJson(url);
   const nowIdx = j.hourly.time.indexOf(j.current.time.slice(0, 13) + ':00');
   const idx = j.hourly.time.map((_, i) => i).filter(i => i % 3 === 0);
   return {
@@ -743,6 +754,32 @@ async function fetchWeather() {
     current: j.current.temperature_2m,
     t: Date.now()
   };
+}
+
+async function fetchMetNo() {
+  const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${UKHTA.lat}&lon=${UKHTA.lon}`;
+  const j = await fetchJson(url);
+  const hourly = j.properties.timeseries.filter(p => p.data.next_1_hours).filter((_, i) => i % 3 === 0);
+  const mskLabel = iso => {
+    const s = new Date(Date.parse(iso) + 3 * 3600e3).toISOString();
+    return `${s.slice(8, 10)}.${s.slice(5, 7)} ${s.slice(11, 16)}`;
+  };
+  return {
+    labels: hourly.map(p => mskLabel(p.time)),
+    values: hourly.map(p => p.data.instant.details.air_temperature),
+    split: 1,
+    current: j.properties.timeseries[0].data.instant.details.air_temperature,
+    t: Date.now()
+  };
+}
+
+async function fetchWeather() {
+  try {
+    return await fetchOpenMeteo();
+  } catch (e) {
+    console.warn('Open-Meteo недоступен, берём MET Norway:', e);
+    return fetchMetNo();
+  }
 }
 
 async function fetchFinance() {
