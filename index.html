@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script defer src="data/flywire-brain.js"></script>
+<script defer src="js/neuro-projection.js"></script>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
 </script>
@@ -109,6 +111,83 @@
   }
   .tile:hover { border-color: rgba(148, 163, 184, .25); background: rgba(255, 255, 255, .04); }
   #fly3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
+  .np-stage {
+    position: relative; overflow: hidden; border-radius: 16px; cursor: grab; touch-action: pan-y;
+    border: 1px solid rgba(148, 163, 184, .1);
+    transition: border-color .6s var(--ease), box-shadow .6s var(--ease);
+    background:
+      radial-gradient(70% 80% at 50% 45%, rgba(34, 211, 238, .07), transparent 70%),
+      radial-gradient(45% 40% at 50% 105%, rgba(217, 70, 239, .08), transparent 70%),
+      #04070f;
+  }
+  .np-stage.is-dragging { cursor: grabbing; }
+  .np-stage.is-signal { border-color: rgba(251, 191, 36, .35); box-shadow: 0 0 0 1px rgba(251, 191, 36, .12), 0 0 48px -12px rgba(251, 191, 36, .35); }
+  .np-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .np-stage::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, .05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, .05) 1px, transparent 1px);
+    background-size: 44px 44px; background-position: center;
+    -webkit-mask-image: radial-gradient(75% 75% at 50% 50%, #000 25%, transparent 80%);
+    mask-image: radial-gradient(75% 75% at 50% 50%, #000 25%, transparent 80%);
+  }
+  .np-stage::after {
+    content: ''; position: absolute; left: 0; right: 0; top: -30%; height: 30%; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, .05), transparent);
+    animation: np-scan 7s linear infinite;
+  }
+  @keyframes np-scan { to { top: 100%; } }
+  .np-corner { position: absolute; z-index: 2; width: 18px; height: 18px; pointer-events: none; border: 0 solid rgba(103, 232, 249, .5); }
+  .np-corner.tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; border-top-left-radius: 6px; }
+  .np-corner.tr { top: 10px; right: 10px; border-width: 1px 1px 0 0; border-top-right-radius: 6px; }
+  .np-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 1px 1px; border-bottom-left-radius: 6px; }
+  .np-corner.br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; border-bottom-right-radius: 6px; }
+  .np-tip {
+    position: absolute; z-index: 3; left: 0; top: 0; min-width: 190px; padding: 10px 12px; pointer-events: none;
+    border-radius: 12px; border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(6, 9, 18, .9); box-shadow: 0 14px 32px -14px rgba(0, 0, 0, .9);
+    font-size: 12px; line-height: 1.45; color: #cbd5e1; backdrop-filter: blur(8px);
+  }
+  .np-view { color: #94a3b8; transition: color .35s var(--ease), background-color .35s var(--ease), box-shadow .35s var(--ease); }
+  .np-view:hover { color: #e2e8f0; }
+  .np-ghost {
+    color: #cbd5e1; border: 1px solid rgba(148, 163, 184, .16); background: rgba(255, 255, 255, .03);
+    transition: color .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease);
+  }
+  .np-ghost:hover { color: #f8fafc; border-color: rgba(34, 211, 238, .4); background: rgba(34, 211, 238, .08); }
+  .np-view.is-on { color: #a5f3fc; background: rgba(34, 211, 238, .12); box-shadow: inset 0 0 0 1px rgba(34, 211, 238, .35); }
+  .np-row {
+    width: 100%; display: grid; grid-template-columns: 10px 1fr auto; align-items: center; column-gap: 12px; row-gap: 7px;
+    padding: 9px 12px; border-radius: 14px; text-align: left;
+    border: 1px solid rgba(148, 163, 184, .1); background: rgba(255, 255, 255, .02);
+    transition: border-color .35s var(--ease), background-color .35s var(--ease), box-shadow .35s var(--ease);
+  }
+  .np-row:hover { border-color: color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 6%, transparent); }
+  .np-row[aria-pressed=true] {
+    border-color: color-mix(in srgb, var(--c) 65%, transparent);
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    box-shadow: 0 10px 30px -16px var(--c);
+  }
+  .np-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+  .np-row.is-off .np-dot { opacity: .5; box-shadow: none; }
+  .np-name { display: block; font-size: 13px; font-weight: 500; color: #e2e8f0; }
+  .np-sub { display: block; margin-top: 2px; font-size: 11px; color: #64748b; }
+  .np-hz { font-size: 13px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .np-row.is-off .np-hz { color: #64748b; font-weight: 500; }
+  .np-meter { grid-column: 2 / 4; height: 3px; border-radius: 999px; overflow: hidden; background: rgba(148, 163, 184, .12); }
+  .np-meter i { display: block; height: 100%; width: 0; background: var(--c); box-shadow: 0 0 8px var(--c); transition: width .4s var(--ease); }
+  .np-card { --c: #67e8f9; }
+  .np-card dt { font-size: 11px; color: #64748b; }
+  .np-card dd { font-size: 12px; color: #e2e8f0; margin-top: 2px; }
+  .np-stim {
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    background: color-mix(in srgb, var(--c) 12%, transparent); color: #f8fafc;
+    transition: background-color .35s var(--ease), box-shadow .35s var(--ease), transform .35s var(--ease);
+  }
+  .np-stim:hover { background: color-mix(in srgb, var(--c) 22%, transparent); box-shadow: 0 10px 28px -12px var(--c); transform: translateY(-1px); }
+  .np-stim:active { transform: none; }
+  #neuro { animation-delay: .24s; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
@@ -179,7 +258,7 @@
       <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Коннектом · 3D-муха</h2>
       <span class="text-xs text-slate-500">тяни мышью, чтобы повернуть</span>
     </div>
-    <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] cursor-grab"></div>
+    <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] xl:aspect-auto xl:max-h-none xl:flex-1 xl:min-h-[420px] cursor-grab"></div>
 
     <div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
       <span class="text-cyan-300">● Глаза</span>
@@ -193,14 +272,6 @@
       <div class="tile p-3"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
       <div class="tile p-3"><span class="text-fuchsia-300">Усики</span><div id="stat-odor" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
       <div class="tile p-3"><span class="text-lime-300">Мозг</span><div id="stat-humidity" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
-    </div>
-
-    <div class="mt-5 rounded-2xl border border-white/10 p-4 bg-white/[0.02]">
-      <div class="flex items-baseline justify-between mb-1">
-        <h3 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Нейронная карта</h3>
-        <span id="neuron-total" class="text-xs text-slate-500"></span>
-      </div>
-      <div id="neuron-list" class="text-xs"></div>
     </div>
   </section>
 
@@ -242,6 +313,62 @@
       </div>
       <p id="m-base" class="text-xs text-slate-500 leading-relaxed mt-3">Запустите симуляцию, чтобы сравнить с наивным прогнозом.</p>
     </div>
+  </section>
+
+  <section id="neuro" class="panel relative p-6 xl:col-span-12">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Нейропроекция · мозг дрозофилы</h2>
+        <p class="text-sm text-slate-400 mt-2 max-w-2xl">Реальные координаты коннектома FlyWire: <span id="np-total" class="text-slate-200 tabular-nums"></span>. Цветом подсвечены <span id="np-model" class="text-slate-200 tabular-nums"></span> модели — они вспыхивают с частотой из пульта.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <div id="np-views" class="inline-flex rounded-full border border-white/10 p-1 bg-white/[0.03]" role="group" aria-label="Проекция">
+          <button data-view="front" aria-pressed="true" class="np-view is-on px-3.5 py-1.5 rounded-full text-xs font-medium">Спереди</button>
+          <button data-view="top" aria-pressed="false" class="np-view px-3.5 py-1.5 rounded-full text-xs font-medium">Сверху</button>
+          <button data-view="side" aria-pressed="false" class="np-view px-3.5 py-1.5 rounded-full text-xs font-medium">Сбоку</button>
+        </div>
+        <button id="np-shot" class="np-ghost px-4 py-2 rounded-full text-xs font-medium" title="Скачать снимок проекции">⤓ Снимок PNG</button>
+        <button id="np-play" class="btn-run px-4 py-2 rounded-full text-xs font-semibold text-white tracking-wide">▶ Прогнать сигнал</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-8 space-y-4">
+        <div id="np-stage" class="np-stage w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-auto lg:h-[560px]" aria-label="Проекция мозга мухи с активными нейронами">
+          <canvas id="np-hud"></canvas>
+          <span class="np-corner tl"></span><span class="np-corner tr"></span><span class="np-corner bl"></span><span class="np-corner br"></span>
+          <div id="np-tip" class="np-tip" hidden></div>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-white/[0.02] px-4 pt-3 pb-2">
+          <div class="flex items-baseline justify-between gap-3 mb-1">
+            <h3 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Растр спайков</h3>
+            <span class="text-xs text-slate-500">каждая черта — спайк нейрона · время замедлено в 20 раз</span>
+          </div>
+          <canvas id="np-raster" class="block w-full h-[160px]"></canvas>
+        </div>
+      </div>
+
+      <aside class="lg:col-span-4 space-y-4">
+        <div>
+          <div class="flex items-baseline justify-between mb-2">
+            <h3 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Группы нейронов</h3>
+            <span class="text-xs text-slate-500">нажми, чтобы выделить</span>
+          </div>
+          <div id="np-groups" class="space-y-2"></div>
+        </div>
+        <div id="np-card" class="np-card tile p-4" aria-live="polite">
+          <div class="flex items-center gap-2.5">
+            <span class="np-dot"></span>
+            <h4 id="np-card-title" class="text-sm font-semibold text-slate-100"></h4>
+          </div>
+          <p id="np-card-text" class="text-xs leading-relaxed text-slate-400 mt-2"></p>
+          <dl id="np-card-facts" class="grid grid-cols-2 gap-x-4 gap-y-3 mt-4"></dl>
+          <button id="np-stim" class="np-stim w-full mt-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide">⚡ Импульс 200 Гц</button>
+        </div>
+      </aside>
+    </div>
+
+    <p class="text-[11px] text-slate-600 mt-4">Данные: FlyWire Consortium — Dorkenwald et al., Schlegel et al., Nature 2024. Точка нейрона — его тело или опорная точка на аксоне. Частицы показывают связи модели, а не реальные синапсы.</p>
   </section>
 </main>
 
@@ -632,7 +759,7 @@ const endDrag = () => { dragging = false; wrap.style.cursor = 'grab'; };
 cv.addEventListener('pointerup', endDrag);
 cv.addEventListener('pointercancel', endDrag);
 
-renderer.setAnimationLoop(frame);
+new IntersectionObserver(([e]) => renderer.setAnimationLoop(e.isIntersecting ? frame : null)).observe(wrap);
 
 const $ = id => document.getElementById(id);
 const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
@@ -856,23 +983,9 @@ function readSliders() {
 
 const HZ_MIN = 10, HZ_MAX = 200;
 const toHz = v => HZ_MIN + Math.min(1, Math.max(0, v)) * (HZ_MAX - HZ_MIN);
-const CHANNEL_GROUP = { odor: 'orn', humidity: 'hygro' };
 
 const drive = s => 0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity;
 const mn9Hz = s => toHz(drive(s));
-
-function renderNeurons(s, mn9) {
-  const inputHz = {};
-  for (const [ch, group] of Object.entries(CHANNEL_GROUP)) inputHz[group] = toHz(s[ch]);
-  $('neuron-list').innerHTML = Object.entries(NEURONS).map(([key, g]) => {
-    const status = key === 'mn9' ? `${mn9} Гц · выход`
-      : key in inputHz ? `${Math.round(inputHz[key])} Гц · вход`
-      : 'не подключена';
-    return `<div class="flex items-baseline justify-between gap-3 py-2 border-b border-white/5 last:border-0">` +
-      `<span class="text-slate-300">${g.name}</span>` +
-      `<span class="tabular-nums whitespace-nowrap text-slate-400">${g.ids.length} нейр. · ${status}</span></div>`;
-  }).join('');
-}
 
 function renderOrgans() {
   const s = readSliders();
@@ -886,7 +999,7 @@ function renderOrgans() {
   $('mn9-live').textContent = mn9 + ' Гц';
   organs.mn9 = drive(s);
   organs.speed = 0.6 + 2.4 * ((s.vision + s.odor + s.humidity) / 3);
-  renderNeurons(s, mn9);
+  neuro?.setInputs(s);
 }
 
 function renderLive() {
@@ -1027,6 +1140,7 @@ function runSimulation() {
   const btn = $('run');
   btn.disabled = true;
   btn.textContent = '⏳ Симуляция...';
+  neuro?.play();
   setTimeout(() => {
     const s = readSliders();
     const mn9 = Math.round(mn9Hz(s));
@@ -1068,6 +1182,14 @@ function runSimulation() {
     btn.disabled = false;
     btn.textContent = '▶ Запустить симуляцию мозга';
   }, 350);
+}
+
+let neuro = null;
+try {
+  neuro = mountNeuroProjection({ THREE, BRAIN: window.FLYWIRE_BRAIN, NEURONS, HZ_MIN, HZ_MAX, toHz, mn9Hz });
+} catch (err) {
+  console.error('Нейропроекция не запустилась', err);
+  $('neuro').remove();
 }
 
 const chartWrap = document.querySelector('.chart-wrap');
@@ -1119,7 +1241,6 @@ $('run').addEventListener('click', runSimulation);
 $('tab-weather').addEventListener('click', () => setMode('weather'));
 $('tab-finance').addEventListener('click', () => setMode('finance'));
 
-$('neuron-total').textContent = Object.values(NEURONS).reduce((n, g) => n + g.ids.length, 0) + ' нейронов · FlyWire';
 renderOrgans();
 setMode('weather');
 window.addEventListener('resize', moveTabIndicator);
