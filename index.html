@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#060912">
+<meta name="description" content="Муха с настоящим коннектомом FlyWire прогнозирует погоду в Ухте и курс USD/RUB: 3D-модель дрозофилы, нейроны мозга и мотонейрон хоботка MN9.">
 <title>Cyber-Drosophila · Коннектом мухи</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2367e8f9'/%3E%3Cstop offset='1' stop-color='%23f0abfc'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='%23060912'/%3E%3Cellipse cx='12' cy='14.5' rx='3' ry='5.5' fill='url(%23g)'/%3E%3Ccircle cx='12' cy='7' r='2.4' fill='url(%23g)'/%3E%3Cpath d='M10 11C5 6 1.5 9 3 12.5S8.5 13.5 10 12M14 11c5-5 8.5-2 7 1.5S15.5 13.5 14 12' stroke='url(%23g)' stroke-width='1.3' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+<script>
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) document.documentElement.classList.add('motion');
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script defer src="data/flywire-brain.js"></script>
@@ -15,368 +21,491 @@
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
 </script>
-<style>
-  :root { --ease: cubic-bezier(.22, .61, .36, 1); }
-  body {
-    background:
-      radial-gradient(900px 500px at 8% -8%, rgba(34, 211, 238, .09), transparent 70%),
-      radial-gradient(800px 600px at 105% 8%, rgba(217, 70, 239, .07), transparent 70%),
-      #060912;
-    color: #cbd5e1;
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-  }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: none; }
-  }
-  .panel {
-    background: linear-gradient(180deg, rgba(17, 24, 39, .72), rgba(9, 13, 25, .78));
-    border: 1px solid rgba(148, 163, 184, .12);
-    border-radius: 20px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 24px 48px -28px rgba(0, 0, 0, .7);
-    backdrop-filter: blur(14px);
-    transition: border-color .5s var(--ease), box-shadow .5s var(--ease);
-    animation: rise .8s var(--ease) both;
-  }
-  .panel:hover {
-    border-color: rgba(34, 211, 238, .22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 24px 56px -28px rgba(8, 145, 178, .35);
-  }
-  main > section:nth-child(2) .panel { animation-delay: .08s; }
-  main > section:nth-child(3) .panel { animation-delay: .16s; }
-  .game-title {
-    font-family: 'Orbitron', ui-sans-serif, sans-serif;
-    font-weight: 800;
-    font-size: clamp(2rem, 5.5vw, 4rem);
-    letter-spacing: .06em;
-    line-height: 1.1;
-    background: linear-gradient(95deg, #e0faff 0%, #67e8f9 45%, #f0abfc 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 0 22px rgba(34, 211, 238, .22));
-    animation: rise 1s var(--ease) both;
-  }
-  .game-title .hot { background: none; -webkit-text-fill-color: #f0abfc; }
-  .hairline {
-    height: 1px; margin: 18px auto 0; width: min(420px, 70%);
-    background: linear-gradient(90deg, transparent, rgba(103, 232, 249, .6), rgba(240, 171, 252, .6), transparent);
-  }
-  input[type=range] {
-    -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; outline: none; cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: #f8fafc; border: none; cursor: pointer;
-    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent), 0 2px 8px rgba(0, 0, 0, .4);
-    transition: transform .25s var(--ease), box-shadow .25s var(--ease);
-  }
-  input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.15); }
-  input[type=range]::-moz-range-thumb {
-    width: 16px; height: 16px; border-radius: 50%; background: #f8fafc; border: none;
-    box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 22%, transparent);
-  }
-  .verdict-up { text-shadow: 0 0 14px rgba(74, 222, 128, .45); }
-  .verdict-down { text-shadow: 0 0 14px rgba(248, 113, 113, .45); }
-  .btn-run {
-    background: linear-gradient(120deg, #0891b2 0%, #7c3aed 55%, #c026d3 100%);
-    background-size: 160% 160%;
-    background-position: 0% 50%;
-    box-shadow: 0 12px 32px -12px rgba(192, 38, 211, .55);
-    transition: transform .35s var(--ease), box-shadow .35s var(--ease), background-position .6s var(--ease);
-  }
-  .btn-run:hover:not(:disabled) {
-    transform: translateY(-1px);
-    background-position: 100% 50%;
-    box-shadow: 0 16px 36px -12px rgba(34, 211, 238, .5);
-  }
-  .btn-run:active:not(:disabled) { transform: translateY(0) scale(.99); }
-  .btn-run:disabled { opacity: .6; cursor: wait; }
-  .tab-active { color: #a5f3fc; }
-  .tab-btn { position: relative; z-index: 1; transition: color .5s var(--ease); }
-  #tab-indicator {
-    position: absolute; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px;
-    background: rgba(34, 211, 238, .12);
-    box-shadow: inset 0 0 0 1px rgba(34, 211, 238, .35);
-    transition: left .55s var(--ease), width .55s var(--ease);
-  }
-  .chart-wrap { transition: opacity .3s var(--ease), transform .3s var(--ease), filter .3s var(--ease); }
-  .chart-wrap.is-swapping { opacity: 0; transform: translateY(8px) scale(.99); filter: blur(3px); }
-  .tile {
-    border: 1px solid rgba(148, 163, 184, .12);
-    background: rgba(255, 255, 255, .02);
-    border-radius: 14px;
-    transition: border-color .35s var(--ease), background-color .35s var(--ease);
-  }
-  .tile:hover { border-color: rgba(148, 163, 184, .25); background: rgba(255, 255, 255, .04); }
-  #fly3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; }
-  .np-stage {
-    position: relative; overflow: hidden; border-radius: 16px; cursor: grab; touch-action: pan-y;
-    border: 1px solid rgba(148, 163, 184, .1);
-    transition: border-color .6s var(--ease), box-shadow .6s var(--ease);
-    background:
-      radial-gradient(70% 80% at 50% 45%, rgba(34, 211, 238, .07), transparent 70%),
-      radial-gradient(45% 40% at 50% 105%, rgba(217, 70, 239, .08), transparent 70%),
-      #04070f;
-  }
-  .np-stage.is-dragging { cursor: grabbing; }
-  .np-stage.is-signal { border-color: rgba(251, 191, 36, .35); box-shadow: 0 0 0 1px rgba(251, 191, 36, .12), 0 0 48px -12px rgba(251, 191, 36, .35); }
-  .np-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .np-stage::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background-image:
-      linear-gradient(rgba(148, 163, 184, .05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, .05) 1px, transparent 1px);
-    background-size: 44px 44px; background-position: center;
-    -webkit-mask-image: radial-gradient(75% 75% at 50% 50%, #000 25%, transparent 80%);
-    mask-image: radial-gradient(75% 75% at 50% 50%, #000 25%, transparent 80%);
-  }
-  .np-stage::after {
-    content: ''; position: absolute; left: 0; right: 0; top: -30%; height: 30%; pointer-events: none;
-    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, .05), transparent);
-    animation: np-scan 7s linear infinite;
-  }
-  @keyframes np-scan { to { top: 100%; } }
-  .np-corner { position: absolute; z-index: 2; width: 18px; height: 18px; pointer-events: none; border: 0 solid rgba(103, 232, 249, .5); }
-  .np-corner.tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; border-top-left-radius: 6px; }
-  .np-corner.tr { top: 10px; right: 10px; border-width: 1px 1px 0 0; border-top-right-radius: 6px; }
-  .np-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 1px 1px; border-bottom-left-radius: 6px; }
-  .np-corner.br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; border-bottom-right-radius: 6px; }
-  .np-tip {
-    position: absolute; z-index: 3; left: 0; top: 0; min-width: 190px; padding: 10px 12px; pointer-events: none;
-    border-radius: 12px; border: 1px solid rgba(148, 163, 184, .18);
-    background: rgba(6, 9, 18, .9); box-shadow: 0 14px 32px -14px rgba(0, 0, 0, .9);
-    font-size: 12px; line-height: 1.45; color: #cbd5e1; backdrop-filter: blur(8px);
-  }
-  .np-view { color: #94a3b8; transition: color .35s var(--ease), background-color .35s var(--ease), box-shadow .35s var(--ease); }
-  .np-view:hover { color: #e2e8f0; }
-  .np-ghost {
-    color: #cbd5e1; border: 1px solid rgba(148, 163, 184, .16); background: rgba(255, 255, 255, .03);
-    transition: color .35s var(--ease), border-color .35s var(--ease), background-color .35s var(--ease);
-  }
-  .np-ghost:hover { color: #f8fafc; border-color: rgba(34, 211, 238, .4); background: rgba(34, 211, 238, .08); }
-  .np-view.is-on { color: #a5f3fc; background: rgba(34, 211, 238, .12); box-shadow: inset 0 0 0 1px rgba(34, 211, 238, .35); }
-  .np-row {
-    width: 100%; display: grid; grid-template-columns: 10px 1fr auto; align-items: center; column-gap: 12px; row-gap: 7px;
-    padding: 9px 12px; border-radius: 14px; text-align: left;
-    border: 1px solid rgba(148, 163, 184, .1); background: rgba(255, 255, 255, .02);
-    transition: border-color .35s var(--ease), background-color .35s var(--ease), box-shadow .35s var(--ease);
-  }
-  .np-row:hover { border-color: color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 6%, transparent); }
-  .np-row[aria-pressed=true] {
-    border-color: color-mix(in srgb, var(--c) 65%, transparent);
-    background: color-mix(in srgb, var(--c) 10%, transparent);
-    box-shadow: 0 10px 30px -16px var(--c);
-  }
-  .np-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
-  .np-row.is-off .np-dot { opacity: .5; box-shadow: none; }
-  .np-name { display: block; font-size: 13px; font-weight: 500; color: #e2e8f0; }
-  .np-sub { display: block; margin-top: 2px; font-size: 11px; color: #64748b; }
-  .np-hz { font-size: 13px; font-weight: 600; color: var(--c); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .np-row.is-off .np-hz { color: #64748b; font-weight: 500; }
-  .np-meter { grid-column: 2 / 4; height: 3px; border-radius: 999px; overflow: hidden; background: rgba(148, 163, 184, .12); }
-  .np-meter i { display: block; height: 100%; width: 0; background: var(--c); box-shadow: 0 0 8px var(--c); transition: width .4s var(--ease); }
-  .np-card { --c: #67e8f9; }
-  .np-card dt { font-size: 11px; color: #64748b; }
-  .np-card dd { font-size: 12px; color: #e2e8f0; margin-top: 2px; }
-  .np-stim {
-    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
-    background: color-mix(in srgb, var(--c) 12%, transparent); color: #f8fafc;
-    transition: background-color .35s var(--ease), box-shadow .35s var(--ease), transform .35s var(--ease);
-  }
-  .np-stim:hover { background: color-mix(in srgb, var(--c) 22%, transparent); box-shadow: 0 10px 28px -12px var(--c); transform: translateY(-1px); }
-  .np-stim:active { transform: none; }
-  #neuro { animation-delay: .24s; }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-  }
-</style>
+<link rel="stylesheet" href="css/site.css">
 </head>
-<body class="p-4 md:p-6">
+<body>
 
-<header class="mb-8 text-center">
-  <h1 class="game-title">CYBER<span class="hot">-</span>DROSOPHILA</h1>
-  <div class="hairline"></div>
-  <p class="text-sm text-slate-400 mt-4 tracking-wide">Прогнозирование временных рядов коннектомом мухи</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a3 3 0 1 0-3-3"/><path d="M3 12h15a3 3 0 1 1-3 3"/><path d="M3 16h7"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.5l8.5 4.8v9.4L12 21.5l-8.5-4.8V7.3z"/><path d="M12 21.5V12M20.5 7.3L12 12 3.5 7.3"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.1 4.5 4.5 0 0 0 7 18z"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M19 9l3 3-3 3M2 12h20"/></symbol>
+  <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+  <symbol id="i-fly" viewBox="0 0 24 24"><ellipse cx="12" cy="14.5" rx="3" ry="5.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="2.4" fill="currentColor" stroke="none"/><path d="M10 11C5 6 1.5 9 3 12.5S8.5 13.5 10 12M14 11c5-5 8.5-2 7 1.5S15.5 13.5 14 12" stroke-width="1.3"/></symbol>
+</svg>
+
+<header id="nav" class="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="brand" aria-label="Cyber-Drosophila, в начало">
+      <span class="brand-mark"><svg class="i" style="color:#a5f3fc"><use href="#i-fly"/></svg></span>
+      <span class="brand-name">CYBER<span class="hot">-</span>DROSOPHILA</span>
+    </a>
+    <nav class="nav-links" aria-label="Разделы">
+      <a href="#sim">Симуляция</a>
+      <a href="#neuro">Нейропроекция</a>
+      <a href="#how">Как это работает</a>
+    </nav>
+    <div class="nav-right">
+      <span class="live-pill" title="Последнее значение"><span class="pulse-dot"></span><span id="nav-live">Ухта · —</span></span>
+      <a class="icon-btn" href="https://github.com/Michigun101/cyber-drosophila-dashboard" target="_blank" rel="noopener" aria-label="Код сайта на GitHub"><svg class="i"><use href="#i-github"/></svg></a>
+    </div>
+  </div>
+  <div class="nav-progress" aria-hidden="true"><i id="nav-progress"></i></div>
 </header>
 
-<div class="flex justify-center mb-8">
-  <div id="mode-tabs" class="relative inline-flex rounded-full border border-white/10 p-1 bg-white/[0.03] backdrop-blur">
-    <span id="tab-indicator"></span>
-    <button id="tab-weather" class="tab-btn tab-active px-5 py-2 rounded-full text-sm font-medium">Погода · Ухта</button>
-    <button id="tab-finance" class="tab-btn px-5 py-2 rounded-full text-sm font-medium text-slate-400 hover:text-slate-200">Финансовый рынок</button>
+<section id="top" class="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <span class="orb orb-a"></span><span class="orb orb-b"></span><span class="orb orb-c"></span>
+    <span class="hero-grid"></span>
   </div>
-</div>
+  <div class="wrap hero-inner">
+    <a href="#neuro" class="eyebrow-pill reveal"><span class="pulse-dot"></span><span>Коннектом FlyWire · <b>139&nbsp;248 нейронов</b></span><svg class="i i-sm"><use href="#i-arrow"/></svg></a>
+    <h1 class="game-title reveal" style="--d:.06s">CYBER<span class="hot">-</span>DROSOPHILA</h1>
+    <div class="hairline reveal" style="--d:.12s"></div>
+    <p class="hero-sub reveal" style="--d:.16s">Прогнозирование временных рядов коннектомом мухи</p>
+    <p class="hero-text reveal" style="--d:.22s">Муха смотрит на график погоды в Ухте или курса доллара. Вы задаёте частоту её рецепторов, сигнал идёт по нейронам из коннектома FlyWire, а мотонейрон хоботка MN9 решает: рост или спад.</p>
+    <div class="hero-cta reveal" style="--d:.28s">
+      <a href="#sim" class="btn btn-run">Открыть пульт<svg class="i i-sm"><use href="#i-down"/></svg></a>
+      <a href="#neuro" class="btn btn-ghost">Смотреть мозг</a>
+    </div>
+    <dl class="hero-stats reveal" style="--d:.36s">
+      <div style="--c:#67e8f9"><dt>нейронов в мозге мухи</dt><dd><span data-count="139248">139&nbsp;248</span></dd></div>
+      <div style="--c:#f0abfc"><dt>нейронов в модели</dt><dd><span data-count="548">548</span></dd></div>
+      <div style="--c:#bef264"><dt>рецептора → мотонейрон MN9</dt><dd>3 → 1</dd></div>
+      <div style="--c:#fcd34d"><dt>частота спайков</dt><dd>10–200 <small>Гц</small></dd></div>
+    </dl>
+  </div>
+</section>
 
-<main class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-
-  <section class="panel relative p-6 xl:col-span-3 space-y-6">
-    <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Пульт стимуляции рецепторов</h2>
-
-    <div id="sliders" class="space-y-5">
-      <div>
-        <div class="flex justify-between text-xs mb-2">
-          <span id="label-vision" class="text-cyan-300">Зрение (График цены/температуры)</span>
-          <span id="val-vision" class="text-cyan-200 tabular-nums whitespace-nowrap">0 Гц</span>
-        </div>
-        <input id="vision" type="range" min="0" max="200" value="100" class="w-full" style="color:#22d3ee; background: linear-gradient(90deg,#164e63,#22d3ee);">
+<main>
+<section id="sim" class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal">
+        <p class="eyebrow"><span class="num">01</span>Симуляция</p>
+        <h2 class="sec-title">Пульт, муха и <span class="grad">прогноз</span></h2>
+        <p class="sec-text">Двигайте ползунки: частоты рецепторов меняют свечение мухи и активность MN9. Затем запустите симуляцию и сравните прогноз мухи с реальностью.</p>
       </div>
-      <div>
-        <div class="flex justify-between text-xs mb-2">
-          <span id="label-odor" class="text-fuchsia-300">Усики Or56a (Запах новостей / Давление)</span>
-          <span id="val-odor" class="text-fuchsia-200 tabular-nums whitespace-nowrap">0 Гц</span>
-        </div>
-        <input id="odor" type="range" min="0" max="200" value="100" class="w-full" style="color:#e879f9; background: linear-gradient(90deg,#701a75,#e879f9);">
-      </div>
-      <div>
-        <div class="flex justify-between text-xs mb-2">
-          <span id="label-humidity" class="text-lime-300">Гигрорецепторы (Влажность / Объем торгов)</span>
-          <span id="val-humidity" class="text-lime-200 tabular-nums whitespace-nowrap">0 Гц</span>
-        </div>
-        <input id="humidity" type="range" min="0" max="200" value="100" class="w-full" style="color:#a3e635; background: linear-gradient(90deg,#365314,#a3e635);">
-      </div>
-    </div>
-
-    <div class="rounded-2xl border border-amber-400/20 p-4 bg-amber-400/[0.04]">
-      <p class="text-xs text-amber-300/80">Активность MN9 (хоботок), прогноз</p>
-      <p class="text-2xl font-semibold text-amber-300 tabular-nums mt-1" id="mn9-live">0 Гц</p>
-    </div>
-
-    <div class="rounded-2xl border border-cyan-400/20 p-4 bg-cyan-400/[0.04]">
-      <p id="live-label" class="text-xs text-cyan-300/80">Сейчас в Ухте</p>
-      <p class="text-2xl font-semibold text-cyan-300 tabular-nums mt-1" id="live-value">—</p>
-    </div>
-
-    <button id="run" class="btn-run w-full py-4 rounded-2xl text-white font-semibold tracking-wide">
-      ▶ Запустить симуляцию мозга
-    </button>
-  </section>
-
-  <section class="panel relative p-6 xl:col-span-5 flex flex-col">
-    <div class="flex items-center justify-between mb-2">
-      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Коннектом · 3D-муха</h2>
-      <span class="text-xs text-slate-500">тяни мышью, чтобы повернуть</span>
-    </div>
-    <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] xl:aspect-auto xl:max-h-none xl:flex-1 xl:min-h-[420px] cursor-grab"></div>
-
-    <div class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
-      <span class="text-cyan-300">● Глаза</span>
-      <span class="text-fuchsia-300">● Усики (Or56a)</span>
-      <span class="text-lime-300">● Грибовидное тело</span>
-      <span class="text-amber-300">● MN9 (хоботок)</span>
-      <span class="text-lime-200/70">● Лапки</span>
-    </div>
-
-    <div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
-      <div class="tile p-3"><span class="text-cyan-300">Глаза</span><div id="stat-vision" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
-      <div class="tile p-3"><span class="text-fuchsia-300">Усики</span><div id="stat-odor" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
-      <div class="tile p-3"><span class="text-lime-300">Мозг</span><div id="stat-humidity" class="tabular-nums text-base font-semibold text-slate-100 mt-1">0</div></div>
-    </div>
-  </section>
-
-  <section class="xl:col-span-4 space-y-6">
-    <div class="panel p-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">График прогноза</h2>
-        <span id="chart-mode" class="text-xs text-slate-500 text-right"></span>
-      </div>
-      <div class="chart-wrap relative h-64">
-        <canvas id="chart"></canvas>
-      </div>
-    </div>
-
-    <div class="panel p-6">
-      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90 mb-3">Вердикт мухи</h2>
-      <p id="verdict" class="text-base leading-relaxed text-slate-200">Загружаю данные…</p>
-    </div>
-
-    <div class="panel p-6">
-      <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90 mb-3">Метрики</h2>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="tile p-4">
-          <p class="text-xs text-slate-500">Точность прогноза</p>
-          <p id="m-acc" class="text-xl font-semibold text-cyan-300 tabular-nums mt-1">—</p>
-        </div>
-        <div class="tile p-4">
-          <p class="text-xs text-slate-500">Верное направление</p>
-          <p id="m-dir" class="text-xl font-semibold text-lime-300 tabular-nums mt-1">—</p>
-        </div>
-        <div class="tile p-4">
-          <p class="text-xs text-slate-500">Средняя ошибка (MAE)</p>
-          <p id="m-mae" class="text-xl font-semibold text-fuchsia-300 tabular-nums mt-1">—</p>
-        </div>
-        <div class="tile p-4">
-          <p class="text-xs text-slate-500">Пик MN9</p>
-          <p id="m-mn9" class="text-xl font-semibold text-amber-300 tabular-nums mt-1">—</p>
+      <div class="reveal" style="--d:.08s">
+        <div id="mode-tabs" class="seg" role="group" aria-label="Источник данных">
+          <span id="tab-indicator"></span>
+          <button id="tab-weather" class="tab-btn tab-active"><svg class="i i-sm"><use href="#i-cloud"/></svg>Погода · Ухта</button>
+          <button id="tab-finance" class="tab-btn text-slate-400 hover:text-slate-200"><svg class="i i-sm"><use href="#i-trend"/></svg>Финансовый рынок</button>
         </div>
       </div>
-      <p id="m-base" class="text-xs text-slate-500 leading-relaxed mt-3">Запустите симуляцию, чтобы сравнить с наивным прогнозом.</p>
     </div>
-  </section>
 
-  <section id="neuro" class="panel relative p-6 xl:col-span-12">
-    <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
-      <div>
-        <h2 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Нейропроекция · мозг дрозофилы</h2>
-        <p class="text-sm text-slate-400 mt-2 max-w-2xl">Реальные координаты коннектома FlyWire: <span id="np-total" class="text-slate-200 tabular-nums"></span>. Цветом подсвечены <span id="np-model" class="text-slate-200 tabular-nums"></span> модели — они вспыхивают с частотой из пульта.</p>
+    <div class="bento">
+      <article class="card b-controls reveal">
+        <header class="card-head">
+          <span class="card-icon" style="--c:#22d3ee"><svg class="i"><use href="#i-sliders"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <h3 class="card-title">Пульт стимуляции</h3>
+            <p class="card-sub">Частоты трёх входов мухи</p>
+          </div>
+          <span class="tag">Вход</span>
+        </header>
+        <div id="sliders" class="ctrls">
+          <div class="ctrl" style="--c:#22d3ee">
+            <div class="ctrl-top">
+              <span class="ctrl-icon"><svg class="i i-sm"><use href="#i-eye"/></svg></span>
+              <label for="vision" class="ctrl-text"><span id="label-vision" class="ctrl-name">Зрение</span><span id="hint-vision" class="ctrl-hint">график температуры</span></label>
+              <output id="val-vision" for="vision" class="ctrl-val">0 Гц</output>
+            </div>
+            <input id="vision" type="range" min="0" max="200" value="100" class="range">
+            <div class="ctrl-scale"><span>10 Гц</span><span>200 Гц</span></div>
+          </div>
+          <div class="ctrl" style="--c:#e879f9">
+            <div class="ctrl-top">
+              <span class="ctrl-icon"><svg class="i i-sm"><use href="#i-wind"/></svg></span>
+              <label for="odor" class="ctrl-text"><span id="label-odor" class="ctrl-name">Усики Or56a</span><span id="hint-odor" class="ctrl-hint">давление</span></label>
+              <output id="val-odor" for="odor" class="ctrl-val">0 Гц</output>
+            </div>
+            <input id="odor" type="range" min="0" max="200" value="100" class="range">
+            <div class="ctrl-scale"><span>10 Гц</span><span>200 Гц</span></div>
+          </div>
+          <div class="ctrl" style="--c:#a3e635">
+            <div class="ctrl-top">
+              <span class="ctrl-icon"><svg class="i i-sm"><use href="#i-drop"/></svg></span>
+              <label for="humidity" class="ctrl-text"><span id="label-humidity" class="ctrl-name">Гигрорецепторы</span><span id="hint-humidity" class="ctrl-hint">влажность</span></label>
+              <output id="val-humidity" for="humidity" class="ctrl-val">0 Гц</output>
+            </div>
+            <input id="humidity" type="range" min="0" max="200" value="100" class="range">
+            <div class="ctrl-scale"><span>10 Гц</span><span>200 Гц</span></div>
+          </div>
+        </div>
+        <div class="ctrl-actions">
+          <div class="presets" role="group" aria-label="Быстрая настройка всех рецепторов">
+            <button data-preset="0">Мин</button>
+            <button data-preset="100">Норма</button>
+            <button data-preset="200">Макс</button>
+            <button data-preset="random">Случайно</button>
+          </div>
+          <button id="run" class="btn btn-run btn-play">Запустить симуляцию мозга</button>
+        </div>
+      </article>
+
+      <article class="card b-fly reveal" style="--d:.08s">
+        <header class="card-head">
+          <span class="card-icon" style="--c:#e879f9"><svg class="i"><use href="#i-cube"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <h3 class="card-title">Коннектом · 3D-муха</h3>
+            <p class="card-sub">Тяни мышью или пальцем, чтобы повернуть</p>
+          </div>
+          <span class="tag">Мозг</span>
+        </header>
+        <div id="fly3d" class="relative w-full aspect-[6/5] max-h-[560px] md:aspect-auto md:max-h-none md:flex-1 md:min-h-[380px] cursor-grab"></div>
+        <div class="legend">
+          <span class="chip" style="--c:#22d3ee"><i></i>Глаза</span>
+          <span class="chip" style="--c:#e879f9"><i></i>Усики (Or56a)</span>
+          <span class="chip" style="--c:#a3e635"><i></i>Грибовидное тело</span>
+          <span class="chip" style="--c:#fbbf24"><i></i>MN9 (хоботок)</span>
+          <span class="chip" style="--c:#d9f99d"><i></i>Лапки</span>
+        </div>
+        <div class="fly-stats">
+          <div class="stat-tile" style="--c:#22d3ee"><span class="stat-lbl">Глаза</span><span class="stat-num"><b id="stat-vision">0</b> Гц</span><span class="meter"><i id="meter-vision"></i></span></div>
+          <div class="stat-tile" style="--c:#e879f9"><span class="stat-lbl">Усики</span><span class="stat-num"><b id="stat-odor">0</b> Гц</span><span class="meter"><i id="meter-odor"></i></span></div>
+          <div class="stat-tile" style="--c:#a3e635"><span class="stat-lbl">Мозг</span><span class="stat-num"><b id="stat-humidity">0</b> Гц</span><span class="meter"><i id="meter-humidity"></i></span></div>
+        </div>
+      </article>
+
+      <div class="b-side">
+        <article class="card b-mn9 reveal" style="--d:.16s">
+          <header class="card-head">
+            <span class="card-icon" style="--c:#fbbf24"><svg class="i"><use href="#i-zap"/></svg></span>
+            <div class="min-w-0 flex-1">
+              <h3 class="card-title">Мотонейрон MN9</h3>
+              <p class="card-sub">Управляет хоботком</p>
+            </div>
+            <span class="tag">Выход</span>
+          </header>
+          <div class="gauge">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <defs><linearGradient id="mn9-grad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#d97706"/><stop offset="1" stop-color="#fde68a"/></linearGradient></defs>
+              <circle class="gauge-track" cx="60" cy="60" r="50" transform="rotate(135 60 60)"/>
+              <circle id="mn9-arc" class="gauge-arc" cx="60" cy="60" r="50" transform="rotate(135 60 60)"/>
+              <line class="gauge-tick" x1="75.3" y1="20.9" x2="81.1" y2="6"/>
+            </svg>
+            <div class="gauge-center">
+              <p id="mn9-live" class="gauge-val">0 Гц</p>
+              <p class="gauge-cap">прогноз активности</p>
+            </div>
+          </div>
+          <p class="mn9-foot"><span id="mn9-state" class="state-chip">Хоботок втянут</span><span>выше 120 Гц — выдвигается</span></p>
+        </article>
+
+        <article class="card b-verdict reveal" style="--d:.22s">
+          <header class="card-head">
+            <span class="card-icon" style="--c:#a3e635"><svg class="i"><use href="#i-target"/></svg></span>
+            <div class="min-w-0 flex-1">
+              <h3 class="card-title">Вердикт мухи</h3>
+              <p class="card-sub">Рост или спад по сигналу MN9</p>
+            </div>
+            <span class="tag">Решение</span>
+          </header>
+          <div id="verdict" class="verdict" aria-live="polite">Загружаю данные…</div>
+        </article>
       </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <div id="np-views" class="inline-flex rounded-full border border-white/10 p-1 bg-white/[0.03]" role="group" aria-label="Проекция">
+
+      <article class="card b-chart reveal">
+        <header class="chart-head">
+          <div class="card-head">
+            <span class="card-icon" style="--c:#22d3ee"><svg class="i"><use href="#i-chart"/></svg></span>
+            <div class="min-w-0 flex-1">
+              <h3 class="card-title">График прогноза</h3>
+              <p id="chart-mode" class="card-sub"></p>
+            </div>
+          </div>
+          <div class="live-kpi">
+            <p id="live-label">Сейчас в Ухте</p>
+            <p id="live-value">—</p>
+            <p id="live-time">загрузка…</p>
+          </div>
+        </header>
+        <div class="chart-wrap">
+          <canvas id="chart"></canvas>
+          <div class="chart-skel" aria-hidden="true">Загружаю данные…</div>
+        </div>
+      </article>
+
+      <article class="card b-metrics reveal" style="--d:.08s">
+        <header class="card-head">
+          <span class="card-icon" style="--c:#e879f9"><svg class="i"><use href="#i-gauge"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <h3 class="card-title">Метрики</h3>
+            <p class="card-sub">Качество прогноза на проверочном отрезке</p>
+          </div>
+          <span class="tag">Итог</span>
+        </header>
+        <div class="kpis">
+          <div class="kpi" style="--c:#22d3ee"><p class="kpi-label">Точность прогноза</p><p id="m-acc" class="kpi-val">—</p><span class="meter"><i id="m-acc-bar"></i></span></div>
+          <div class="kpi" style="--c:#a3e635"><p class="kpi-label">Верное направление</p><p id="m-dir" class="kpi-val">—</p><span class="meter"><i id="m-dir-bar"></i></span></div>
+          <div class="kpi" style="--c:#e879f9"><p class="kpi-label">Средняя ошибка (MAE)</p><p id="m-mae" class="kpi-val">—</p><p class="kpi-note">меньше — лучше</p></div>
+          <div class="kpi" style="--c:#fbbf24"><p class="kpi-label">Пик MN9</p><p id="m-mn9" class="kpi-val">—</p><span class="meter"><i id="m-mn9-bar"></i></span></div>
+        </div>
+        <div class="cmp">
+          <p class="cmp-title">Ошибка мухи и наивного прогноза</p>
+          <div class="cmp-row"><span>Муха</span><span class="cmp-track cmp-fly"><i id="cmp-fly"></i></span><span id="cmp-fly-v" class="cmp-v">—</span></div>
+          <div class="cmp-row"><span>Наивный</span><span class="cmp-track cmp-naive"><i id="cmp-naive"></i></span><span id="cmp-naive-v" class="cmp-v">—</span></div>
+          <p id="m-base" class="cmp-note">Запустите симуляцию, чтобы сравнить с наивным прогнозом.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="neuro" class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal">
+        <p class="eyebrow"><span class="num">02</span>Нейропроекция</p>
+        <h2 class="sec-title">Мозг дрозофилы <span class="grad">в реальных координатах</span></h2>
+        <p class="sec-text">Реальные координаты коннектома FlyWire: <span id="np-total" class="text-slate-200 tabular-nums"></span>. Цветом подсвечены <span id="np-model" class="text-slate-200 tabular-nums"></span> модели — они вспыхивают с частотой из пульта.</p>
+      </div>
+      <div class="np-tools reveal" style="--d:.08s">
+        <div id="np-views" class="seg" role="group" aria-label="Проекция">
           <button data-view="front" aria-pressed="true" class="np-view is-on px-3.5 py-1.5 rounded-full text-xs font-medium">Спереди</button>
           <button data-view="top" aria-pressed="false" class="np-view px-3.5 py-1.5 rounded-full text-xs font-medium">Сверху</button>
           <button data-view="side" aria-pressed="false" class="np-view px-3.5 py-1.5 rounded-full text-xs font-medium">Сбоку</button>
         </div>
-        <button id="np-shot" class="np-ghost px-4 py-2 rounded-full text-xs font-medium" title="Скачать снимок проекции">⤓ Снимок PNG</button>
-        <button id="np-play" class="btn-run px-4 py-2 rounded-full text-xs font-semibold text-white tracking-wide">▶ Прогнать сигнал</button>
+        <button id="np-shot" class="np-ghost btn-sm" title="Скачать снимок проекции"><svg class="i i-sm"><use href="#i-download"/></svg>Снимок PNG</button>
+        <button id="np-play" class="btn-run btn-play btn-sm">Прогнать сигнал</button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-8 space-y-4">
-        <div id="np-stage" class="np-stage w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-auto lg:h-[560px]" aria-label="Проекция мозга мухи с активными нейронами">
-          <canvas id="np-hud"></canvas>
-          <span class="np-corner tl"></span><span class="np-corner tr"></span><span class="np-corner bl"></span><span class="np-corner br"></span>
-          <div id="np-tip" class="np-tip" hidden></div>
-        </div>
-        <div class="rounded-2xl border border-white/10 bg-white/[0.02] px-4 pt-3 pb-2">
-          <div class="flex items-baseline justify-between gap-3 mb-1">
-            <h3 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Растр спайков</h3>
-            <span class="text-xs text-slate-500">каждая черта — спайк нейрона · время замедлено в 20 раз</span>
-          </div>
-          <canvas id="np-raster" class="block w-full h-[160px]"></canvas>
-        </div>
+    <div class="bento-neuro">
+      <div id="np-stage" class="np-stage reveal w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-auto lg:min-h-[540px]" aria-label="Проекция мозга мухи с активными нейронами">
+        <canvas id="np-hud"></canvas>
+        <span class="np-corner tl"></span><span class="np-corner tr"></span><span class="np-corner bl"></span><span class="np-corner br"></span>
+        <div id="np-tip" class="np-tip" hidden></div>
       </div>
 
-      <aside class="lg:col-span-4 space-y-4">
-        <div>
-          <div class="flex items-baseline justify-between mb-2">
-            <h3 class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-300/90">Группы нейронов</h3>
-            <span class="text-xs text-slate-500">нажми, чтобы выделить</span>
+      <article class="card np-groups reveal" style="--d:.08s">
+        <header class="card-head">
+          <span class="card-icon" style="--c:#a78bfa"><svg class="i"><use href="#i-list"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <h3 class="card-title">Группы нейронов</h3>
+            <p class="card-sub">Нажми, чтобы выделить на проекции</p>
           </div>
-          <div id="np-groups" class="space-y-2"></div>
-        </div>
-        <div id="np-card" class="np-card tile p-4" aria-live="polite">
-          <div class="flex items-center gap-2.5">
-            <span class="np-dot"></span>
-            <h4 id="np-card-title" class="text-sm font-semibold text-slate-100"></h4>
-          </div>
-          <p id="np-card-text" class="text-xs leading-relaxed text-slate-400 mt-2"></p>
-          <dl id="np-card-facts" class="grid grid-cols-2 gap-x-4 gap-y-3 mt-4"></dl>
-          <button id="np-stim" class="np-stim w-full mt-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide">⚡ Импульс 200 Гц</button>
-        </div>
-      </aside>
-    </div>
+        </header>
+        <div id="np-groups" class="mt-4 grid gap-1.5"></div>
+      </article>
 
-    <p class="text-[11px] text-slate-600 mt-4">Данные: FlyWire Consortium — Dorkenwald et al., Schlegel et al., Nature 2024. Точка нейрона — его тело или опорная точка на аксоне. Частицы показывают связи модели, а не реальные синапсы.</p>
-  </section>
+      <div id="np-card" class="np-card card reveal" style="--d:.08s" aria-live="polite">
+        <div class="flex items-center gap-2.5">
+          <span class="np-dot"></span>
+          <h4 id="np-card-title" class="text-sm font-semibold text-slate-100"></h4>
+        </div>
+        <p id="np-card-text" class="text-xs leading-relaxed text-slate-400 mt-2"></p>
+        <dl id="np-card-facts" class="grid grid-cols-2 gap-x-4 gap-y-3 mt-4"></dl>
+        <button id="np-stim" class="np-stim w-full mt-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide"><svg class="i i-sm"><use href="#i-zap"/></svg>Импульс 200 Гц</button>
+      </div>
+
+      <article class="card np-raster reveal">
+        <header class="card-head">
+          <span class="card-icon" style="--c:#fbbf24"><svg class="i"><use href="#i-pulse"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <h3 class="card-title">Растр спайков</h3>
+            <p class="card-sub">Каждая черта — спайк нейрона · время замедлено в 20 раз</p>
+          </div>
+        </header>
+        <canvas id="np-raster" class="block w-full h-[176px] mt-4"></canvas>
+        <p class="note">Данные: FlyWire Consortium — Dorkenwald et al., Schlegel et al., Nature 2024. Точка нейрона — его тело или опорная точка на аксоне. Частицы показывают связи модели, а не реальные синапсы.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal">
+        <p class="eyebrow"><span class="num">03</span>Как это работает</p>
+        <h2 class="sec-title">От данных к решению мухи <span class="grad">за четыре шага</span></h2>
+      </div>
+    </div>
+    <ol class="steps">
+      <li class="card reveal" style="--c:#22d3ee">
+        <div class="step-top"><span class="step-icon"><svg class="i"><use href="#i-db"/></svg></span><span class="step-num">01</span></div>
+        <h3 class="step-title">Данные</h3>
+        <p class="step-text">Температура в Ухте от <b>Open-Meteo</b>: факт за 2 дня и прогноз на 4 дня, запасной источник — MET Norway. Или курс <b>USD/RUB</b> за 30 дней.</p>
+      </li>
+      <li class="card reveal" style="--c:#e879f9; --d:.08s">
+        <div class="step-top"><span class="step-icon"><svg class="i"><use href="#i-sliders"/></svg></span><span class="step-num">02</span></div>
+        <h3 class="step-title">Рецепторы</h3>
+        <p class="step-text">Ползунки задают частоту трёх входов мухи: <b>зрение</b>, <b>запах Or56a</b> и <b>гигрорецепторы</b>. Каждый сигнал переводится в спайки от 10 до 200 Гц.</p>
+      </li>
+      <li class="card reveal" style="--c:#fbbf24; --d:.16s">
+        <div class="step-top"><span class="step-icon"><svg class="i"><use href="#i-zap"/></svg></span><span class="step-num">03</span></div>
+        <h3 class="step-title">Мотонейрон MN9</h3>
+        <p class="step-text">MN9 управляет хоботком и суммирует входы: <b>0,4 · зрение + 0,35 · запах + 0,25 · влажность</b>. Выше 120 Гц муха вытягивает хоботок.</p>
+      </li>
+      <li class="card reveal" style="--c:#a3e635; --d:.24s">
+        <div class="step-top"><span class="step-icon"><svg class="i"><use href="#i-check"/></svg></span><span class="step-num">04</span></div>
+        <h3 class="step-title">Прогноз и проверка</h3>
+        <p class="step-text">Муха продолжает недавний тренд, и чем выше активность MN9, тем смелее прогноз. Его сравнивают с реальностью и с наивным прогнозом <b>«последнее значение»</b>.</p>
+      </li>
+    </ol>
+  </div>
+</section>
 </main>
 
-<footer class="text-center text-xs text-slate-600 mt-8 space-y-1">
-  <p>Погода: Open-Meteo, Ухта (факт за 2 дня и прогноз на 4 дня). Курс USD/RUB: fawazahmed0/currency-api.</p>
-  <p>Прогноз мухи — демонстрационная модель, а не финансовая или метеорологическая рекомендация.</p>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a href="#top" class="brand">
+          <span class="brand-mark"><svg class="i" style="color:#a5f3fc"><use href="#i-fly"/></svg></span>
+          <span class="brand-name">CYBER<span class="hot">-</span>DROSOPHILA</span>
+        </a>
+        <p class="footer-about">Муха с настоящим коннектомом прогнозирует погоду и курс валют. Модель, 3D-муха и мозг работают прямо в браузере.</p>
+      </div>
+      <div>
+        <h4>Данные</h4>
+        <ul>
+          <li><a class="flink" href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> — погода в Ухте: факт за 2 дня и прогноз на 4 дня</li>
+          <li><a class="flink" href="https://www.met.no/en" target="_blank" rel="noopener">MET Norway</a> — запасной источник погоды</li>
+          <li><a class="flink" href="https://github.com/fawazahmed0/exchange-api" target="_blank" rel="noopener">fawazahmed0/currency-api</a> — курс USD/RUB</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Коннектом</h4>
+        <ul>
+          <li><a class="flink" href="https://flywire.ai/" target="_blank" rel="noopener">FlyWire</a> — карта всех нейронов мозга дрозофилы</li>
+          <li><a class="flink" href="https://doi.org/10.1038/s41586-024-07558-y" target="_blank" rel="noopener">Dorkenwald et al., Nature 2024</a></li>
+          <li><a class="flink" href="https://doi.org/10.1038/s41586-024-07686-5" target="_blank" rel="noopener">Schlegel et al., Nature 2024</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Прогноз мухи — демонстрационная модель, а не финансовая или метеорологическая рекомендация.</p>
+      <div class="flex items-center gap-2">
+        <a class="icon-btn" href="https://github.com/Michigun101/cyber-drosophila-dashboard" target="_blank" rel="noopener" aria-label="Код сайта на GitHub"><svg class="i"><use href="#i-github"/></svg></a>
+        <a href="#top" class="to-top">Наверх<svg class="i i-sm"><use href="#i-up"/></svg></a>
+      </div>
+    </div>
+  </div>
 </footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const motion = document.documentElement.classList.contains('motion');
+
+  if (motion) {
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add('is-in');
+        io.unobserve(e.target);
+      }
+    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  }
+
+  const nav = $('nav'), bar = $('nav-progress');
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const max = document.documentElement.scrollHeight - innerHeight;
+      nav.classList.toggle('is-scrolled', scrollY > 8);
+      bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+    });
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  onScroll();
+
+  const links = [...document.querySelectorAll('.nav-links a')];
+  const spy = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('is-active', a.hash === '#' + e.target.id));
+    }
+  }, { rootMargin: '-40% 0px -55% 0px' });
+  document.querySelectorAll('#top, main > section').forEach(s => spy.observe(s));
+
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    let raf = 0, last = null;
+    document.addEventListener('pointermove', e => {
+      last = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const card = last.target.closest && last.target.closest('.card');
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${last.clientX - r.left}px`);
+        card.style.setProperty('--my', `${last.clientY - r.top}px`);
+      });
+    }, { passive: true });
+  }
+
+  const ranges = ['vision', 'odor', 'humidity'].map($);
+  const presets = [...document.querySelectorAll('[data-preset]')];
+  const paint = () => {
+    ranges.forEach(r => r.style.setProperty('--p', `${r.value / r.max * 100}%`));
+    presets.forEach(b => b.classList.toggle('is-on', ranges.every(r => r.value === b.dataset.preset)));
+  };
+  ranges.forEach(r => r.addEventListener('input', paint));
+  paint();
+  let slide = 0;
+  presets.forEach(b => b.addEventListener('click', () => {
+    const from = ranges.map(r => +r.value);
+    const to = ranges.map(() => (b.dataset.preset === 'random' ? Math.round(Math.random() * 200) : +b.dataset.preset));
+    const set = k => {
+      ranges.forEach((r, i) => { r.value = Math.round(from[i] + (to[i] - from[i]) * k); });
+      ranges[0].dispatchEvent(new Event('input'));
+    };
+    cancelAnimationFrame(slide);
+    if (!motion) return set(1);
+    const t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / 450);
+      set(1 - (1 - k) ** 3);
+      if (k < 1) slide = requestAnimationFrame(step);
+    };
+    slide = requestAnimationFrame(step);
+  }));
+
+  if (motion) {
+    const counters = document.querySelectorAll('[data-count]');
+    counters.forEach(el => { el.textContent = '0'; });
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        const el = e.target, to = +el.dataset.count, t0 = performance.now() + 350;
+        const step = now => {
+          const k = Math.max(0, Math.min(1, (now - t0) / 1600));
+          el.textContent = Math.round(to * (1 - (1 - k) ** 4)).toLocaleString('ru-RU');
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+    }, { threshold: 0.5 });
+    counters.forEach(el => io.observe(el));
+  }
+})();
+</script>
 
 <script type="module">
 import * as THREE from 'three';
@@ -550,15 +679,15 @@ const NEURONS = {
 };
 const CFG = {
   weather: {
-    labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+    labels: [['Зрение', 'график температуры'], ['Усики Or56a', 'давление'], ['Гигрорецепторы', 'влажность']],
     chart: 'Погода, Ухта, °C · сплошная — факт, пунктир — прогноз Open-Meteo',
-    live: 'Сейчас в Ухте', unit: ' °C', decimals: 1,
+    live: 'Сейчас в Ухте', short: 'Ухта', zone: 'прогноз', unit: ' °C', decimals: 1,
     horizon: 'Горизонт: 4 дня. Точность сравнивается с прогнозом Open-Meteo, а не с измеренной погодой.'
   },
   finance: {
-    labels: ['Зрение (График цены/температуры)', 'Усики Or56a (Запах новостей / Давление)', 'Гигрорецепторы (Влажность / Объем торгов)'],
+    labels: [['Зрение', 'график цены'], ['Усики Or56a', 'запах новостей'], ['Гигрорецепторы', 'объём торгов']],
     chart: 'USD/RUB, ₽ · 30 дней, последние 10 дней — бэктест модели',
-    live: 'USD/RUB сейчас', unit: ' ₽', decimals: 2,
+    live: 'USD/RUB сейчас', short: 'USD/RUB', zone: 'бэктест', unit: ' ₽', decimals: 2,
     horizon: 'Бэктест: прогноз последних 10 дней, сравнённый с реальным курсом.'
   }
 };
@@ -570,31 +699,77 @@ const cache = {};
 
 const sliders = { vision: $('vision'), odor: $('odor'), humidity: $('humidity') };
 
+Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
+Chart.defaults.color = '#64748b';
+
+const forecastZone = {
+  id: 'forecastZone',
+  beforeDatasetsDraw(c) {
+    const n = c.data.labels.length;
+    if (n < 2 || curSplit < 1 || curSplit >= n) return;
+    const { ctx, chartArea: a, scales: { x } } = c;
+    const px = x.getPixelForValue(curSplit);
+    const g = ctx.createLinearGradient(px, 0, a.right, 0);
+    g.addColorStop(0, 'rgba(232,121,249,.09)');
+    g.addColorStop(1, 'rgba(232,121,249,.02)');
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.fillRect(px, a.top, a.right - px, a.bottom - a.top);
+    ctx.strokeStyle = 'rgba(240,171,252,.45)';
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.moveTo(px, a.top);
+    ctx.lineTo(px, a.bottom);
+    ctx.stroke();
+    ctx.font = '600 10px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(240,171,252,.85)';
+    ctx.fillText(CFG[mode].zone.toUpperCase() + ' →', px + 8, a.top + 14);
+    ctx.restore();
+  }
+};
+
+const realityFill = c => {
+  const a = c.chart.chartArea;
+  if (!a) return 'transparent';
+  const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+  g.addColorStop(0, 'rgba(34,211,238,.2)');
+  g.addColorStop(1, 'rgba(34,211,238,0)');
+  return g;
+};
+
 const chart = new Chart($('chart').getContext('2d'), {
   type: 'line',
   data: {
     labels: [],
     datasets: [
       {
-        label: 'Реальность', data: [], borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,.1)',
-        borderWidth: 2, pointRadius: 0, tension: .3, fill: false,
+        label: 'Реальность', data: [], borderColor: '#22d3ee', backgroundColor: realityFill,
+        borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: '#22d3ee', tension: .3, fill: 'start',
         segment: { borderDash: ctx => (ctx.p0DataIndex >= curSplit ? [5, 4] : undefined) }
       },
-      { label: 'Прогноз Мухи', data: [], borderColor: '#e879f9', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, tension: .3, fill: false }
+      {
+        label: 'Прогноз Мухи', data: [], borderColor: '#e879f9', borderDash: [6, 4], borderWidth: 2,
+        pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: '#e879f9', tension: .3, fill: false
+      }
     ]
   },
   options: {
-    responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
+    responsive: true, maintainAspectRatio: false, locale: 'ru-RU', animation: { duration: 700, easing: 'easeOutQuart' },
     interaction: { mode: 'index', intersect: false },
     plugins: {
-      legend: { labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16 } },
-      tooltip: { backgroundColor: 'rgba(9,13,25,.92)', borderColor: 'rgba(148,163,184,.2)', borderWidth: 1, padding: 10, cornerRadius: 10, titleColor: '#e2e8f0', bodyColor: '#cbd5e1', displayColors: true }
+      legend: { align: 'end', labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16 } },
+      tooltip: {
+        backgroundColor: 'rgba(9,13,25,.94)', borderColor: 'rgba(148,163,184,.2)', borderWidth: 1, padding: 12, cornerRadius: 12,
+        titleColor: '#e2e8f0', bodyColor: '#cbd5e1', displayColors: true, usePointStyle: true, boxPadding: 4,
+        callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y == null ? '—' : fmtVal(c.parsed.y) + CFG[mode].unit}` }
+      }
     },
     scales: {
-      x: { ticks: { color: '#64748b', maxTicksLimit: 8, maxRotation: 0 }, grid: { color: 'rgba(148,163,184,.08)' } },
-      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.08)' } }
+      x: { ticks: { color: '#64748b', maxTicksLimit: 8, maxRotation: 0 }, grid: { color: 'rgba(148,163,184,.07)' }, border: { display: false } },
+      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.07)' }, border: { display: false } }
     }
-  }
+  },
+  plugins: [forecastZone]
 });
 
 function fmtVal(v, m = mode) {
@@ -611,6 +786,7 @@ function readSliders() {
 }
 
 const HZ_MIN = 10, HZ_MAX = 200;
+const MN9_OUT = 120, GAUGE = 235.62;
 const toHz = v => HZ_MIN + Math.min(1, Math.max(0, v)) * (HZ_MAX - HZ_MIN);
 
 const drive = s => 0.4 * s.vision + 0.35 * s.odor + 0.25 * s.humidity;
@@ -622,10 +798,14 @@ function renderOrgans() {
     const hz = Math.round(toHz(s[k]));
     $('val-' + k).textContent = hz + ' Гц';
     $('stat-' + k).textContent = hz;
+    $('meter-' + k).style.width = s[k] * 100 + '%';
     organs[k] = s[k];
   }
   const mn9 = Math.round(mn9Hz(s));
   $('mn9-live').textContent = mn9 + ' Гц';
+  $('mn9-arc').style.strokeDasharray = `${(drive(s) * GAUGE).toFixed(2)} 400`;
+  $('mn9-state').textContent = mn9 > MN9_OUT ? 'Хоботок выдвинут' : 'Хоботок втянут';
+  $('mn9-state').classList.toggle('is-out', mn9 > MN9_OUT);
   organs.mn9 = drive(s);
   organs.speed = 0.6 + 2.4 * ((s.vision + s.odor + s.humidity) / 3);
   neuro?.setInputs(s);
@@ -633,8 +813,11 @@ function renderOrgans() {
 
 function renderLive() {
   const d = cache[mode];
+  const value = d ? fmtVal(d.current) + CFG[mode].unit : '—';
   $('live-label').textContent = CFG[mode].live;
-  $('live-value').textContent = d ? fmtVal(d.current) + CFG[mode].unit : '—';
+  $('live-value').textContent = value;
+  $('live-time').textContent = d ? 'обновлено в ' + new Date(d.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 'загрузка…';
+  $('nav-live').textContent = `${CFG[mode].short} · ${value}`;
 }
 
 function drawReality(d) {
@@ -644,6 +827,7 @@ function drawReality(d) {
   chart.data.datasets[0].data = d.values;
   chart.data.datasets[1].data = [];
   chart.update();
+  $('chart').parentElement.classList.add('has-data');
 }
 
 async function fetchJson(url, tries = 2) {
@@ -742,6 +926,8 @@ async function refresh(m) {
   renderLive();
   if (!d) {
     $('verdict').textContent = 'Не удалось загрузить данные. Попробуйте обновить страницу позже.';
+    $('live-time').textContent = 'нет данных';
+    $('chart').parentElement.classList.add('has-data');
     return;
   }
   if (d !== drawnData) {
@@ -760,6 +946,31 @@ function predict(truth, split, s) {
   return pred;
 }
 
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tweens = new WeakMap();
+
+function countTo(el, to, fmt) {
+  const prev = tweens.get(el);
+  cancelAnimationFrame(prev?.raf);
+  const from = prev?.to ?? 0, tw = { to }, t0 = performance.now();
+  tweens.set(el, tw);
+  if (reduceMotion) {
+    el.textContent = fmt(to);
+    return;
+  }
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 700);
+    el.textContent = fmt(k < 1 ? from + (to - from) * (1 - (1 - k) ** 3) : to);
+    if (k < 1) tw.raf = requestAnimationFrame(step);
+  };
+  tw.raf = requestAnimationFrame(step);
+}
+
+const TREND = {
+  up: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+  down: '<path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/>'
+};
+
 function runSimulation() {
   const d = cache[mode];
   if (!d) {
@@ -768,7 +979,7 @@ function runSimulation() {
   }
   const btn = $('run');
   btn.disabled = true;
-  btn.textContent = '⏳ Симуляция...';
+  btn.textContent = 'Симуляция…';
   neuro?.play();
   setTimeout(() => {
     const s = readSliders();
@@ -792,24 +1003,36 @@ function runSimulation() {
     const dir = fut.length > 1 ? (correct / (fut.length - 1)) * 100 : 0;
 
     const up = pred[pred.length - 1] > truth[split - 1];
-    const proboscis = mn9 > 120 ? 'вытянула хоботок' : 'втянула хоботок';
+    const trend = up ? 'up' : 'down';
+    const proboscis = mn9 > MN9_OUT ? 'вытянула хоботок' : 'втянула хоботок';
     $('verdict').innerHTML =
-      `Активность нейрона MN9: <span class="text-amber-300">${mn9} Гц</span> -> Муха ${proboscis} -> ` +
-      `ПРОГНОЗ: <span class="${up ? 'verdict-up text-lime-300' : 'verdict-down text-red-400'} font-bold">` +
-      (up ? 'БУДЕТ РОСТ 📈' : 'БУДЕТ СПАД 📉') + '</span>' +
-      `<br><span class="text-xs text-slate-500">${CFG[mode].horizon}</span>`;
+      `<span class="v-trend is-${trend} verdict-${trend}">` +
+      `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TREND[trend]}</svg>` +
+      `${up ? 'Будет рост' : 'Будет спад'}</span>` +
+      `<span class="v-chain"><span class="v-chip">MN9 <b class="text-amber-300">${mn9} Гц</b></span><span class="v-arrow">→</span>` +
+      `<span class="v-chip">Муха ${proboscis}</span></span>` +
+      `<span class="v-note">${CFG[mode].horizon}</span>`;
 
-    $('m-acc').textContent = acc.toFixed(1) + '%';
-    $('m-dir').textContent = dir.toFixed(0) + '%';
-    $('m-mae').textContent = fmtVal(mae) + CFG[mode].unit;
-    $('m-mn9').textContent = mn9 + ' Гц';
+    const m = mode, unit = CFG[m].unit;
+    countTo($('m-acc'), acc, v => v.toFixed(1) + '%');
+    countTo($('m-dir'), dir, v => v.toFixed(0) + '%');
+    countTo($('m-mae'), mae, v => fmtVal(v, m) + unit);
+    countTo($('m-mn9'), mn9, v => Math.round(v) + ' Гц');
+    $('m-acc-bar').style.width = acc + '%';
+    $('m-dir-bar').style.width = dir + '%';
+    $('m-mn9-bar').style.width = drive(s) * 100 + '%';
     const naiveMae = mean(fut.map(x => Math.abs(x - truth[split - 1])));
     const gain = naiveMae > 0 ? (1 - mae / naiveMae) * 100 : 0;
-    $('m-base').textContent = `MAE наивного прогноза («последнее значение»): ${fmtVal(naiveMae)}${CFG[mode].unit}. ` +
+    const worst = Math.max(mae, naiveMae) || 1;
+    $('cmp-fly').style.width = mae / worst * 100 + '%';
+    $('cmp-naive').style.width = naiveMae / worst * 100 + '%';
+    $('cmp-fly-v').textContent = fmtVal(mae, m) + unit;
+    $('cmp-naive-v').textContent = fmtVal(naiveMae, m) + unit;
+    $('m-base').textContent = 'Наивный прогноз просто повторяет последнее значение. ' +
       `Ошибка мухи ${gain >= 0 ? 'ниже' : 'выше'} на ${Math.abs(gain).toFixed(0)}%.`;
 
     btn.disabled = false;
-    btn.textContent = '▶ Запустить симуляцию мозга';
+    btn.textContent = 'Запустить симуляцию мозга';
   }, 350);
 }
 
@@ -842,9 +1065,9 @@ async function setMode(m) {
   $('tab-finance').classList.toggle('text-slate-400', isW);
   moveTabIndicator();
   $('chart-mode').textContent = CFG[m].chart;
-  $('label-vision').textContent = CFG[m].labels[0];
-  $('label-odor').textContent = CFG[m].labels[1];
-  $('label-humidity').textContent = CFG[m].labels[2];
+  ['vision', 'odor', 'humidity'].forEach((k, i) => {
+    [$('label-' + k).textContent, $('hint-' + k).textContent] = CFG[m].labels[i];
+  });
   renderLive();
   chartWrap.classList.add('is-swapping');
   await wait(300);
@@ -859,6 +1082,7 @@ async function setMode(m) {
     chart.data.datasets.forEach(ds => (ds.data = []));
     chart.update();
     drawnData = null;
+    chartWrap.classList.remove('has-data');
     $('verdict').textContent = 'Загружаю данные…';
   }
   await refresh(m);
